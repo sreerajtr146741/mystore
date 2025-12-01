@@ -5,66 +5,79 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
 
-/*
-|--------------------------------------------------------------------------
-| GUEST ROUTES
-|--------------------------------------------------------------------------
-*/
+
+//SMART ROOT
+
+
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('products.index')
+        : redirect()->route('login');
+})->name('root');
+
+
+ //GUEST ROUTES
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 });
 
-/*
-|--------------------------------------------------------------------------
-| AUTH ROUTES
-|--------------------------------------------------------------------------
-*/
+
+// AUTH ROUTES
+
+
 Route::middleware('auth')->group(function () {
 
-    // LOGOUT
+    // LOGOUT 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // HOME + PRODUCTS
-    Route::get('/', [ProductController::class, 'index'])->name('home');
-    Route::resource('products', ProductController::class);
+    // PRODUCTS
+    Route::resource('products', ProductController::class)->parameters([
+        'products' => 'product'
+    ]);
 
     // CART
-    Route::post('/cart/add/{product}', [ProductController::class, 'addToCart'])->name('cart.add');
-    Route::post('/cart/remove/{id}', [ProductController::class, 'removeFromCart'])->name('cart.remove');
-    Route::get('/cart', fn() => view('cart.index'))->name('cart.index');
+    Route::post('/cart/add/{product}', [ProductController::class, 'addToCart'])
+        ->whereNumber('product')
+        ->name('cart.add');
 
-    /*
-    |--------------------------------------------------------------------------
-    | CHECKOUT ROUTES
-    |--------------------------------------------------------------------------
-    */
+    Route::post('/cart/remove/{id}', [ProductController::class, 'removeFromCart'])
+        ->whereNumber('id')
+        ->name('cart.remove');
 
-    // Show checkout page (cart checkout)
-    Route::get('/checkout', [ProductController::class, 'checkout'])
-        ->name('checkout');
+    Route::get('/cart', fn () => view('cart.index'))->name('cart.index');
+
+    
+    // CHECKOUT ROUTES
+  
+    // Show checkout (cart)
+    Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout');
 
     // Single product checkout
     Route::get('/checkout/product/{id}', [ProductController::class, 'checkoutSingle'])
-        ->name('checkout.single')
-        ->where('id', '[0-9]+');
+        ->whereNumber('id')
+        ->name('checkout.single');
 
-    // PROCESS PAYMENT (must be POST)
-    Route::post('/checkout/pay', [CheckoutController::class, 'pay'])
-        ->name('payment.process');
+    // PROCESS PAYMENT 
+    Route::post('/checkout/process', [CheckoutController::class, 'pay'])
+        ->name('checkout.process');
 
-    // SUCCESS PAGE
-    Route::get('/checkout/success', [CheckoutController::class, 'success'])
-        ->name('checkout.success');
+    // SUCCESS & CANCEL
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/cancel',  [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
-    // CANCEL PAGE
-    Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])
-        ->name('checkout.cancel');
-
-    // PROFILE SETTINGS
-    Route::get('/profile/edit', fn() => view('profile.edit'))->name('profile.edit');
+    // PROFILE
+    Route::get('/profile/edit', fn () => view('profile.edit'))->name('profile.edit');
     Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('profile.update');
 });
+
+//OPTIONAL: Fallback to root
+
+
+// Route::fallback(function () {
+//     return redirect()->route('root');
+// });

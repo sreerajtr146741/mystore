@@ -16,94 +16,118 @@ class ProductController extends Controller
         'Fashion', 'Shoes', 'Bags', 'Watches',
         'Furniture', 'Home Decor', 'Kitchen',
         'Sports', 'Gym & Fitness',
-        'Bikes', 'Cars',
+        'Vehicles', 'Cars','Bikes','Accessories',
         'Fruits', 'Vegetables', 'Groceries',
         'Books', 'Toys', 'Other'
     ];
 
     public function index(Request $request)
-{
-    $products = Product::where('user_id', Auth::id())
-        ->when($request->search, function($q) use ($request) {
-            $q->where('name', 'like', "%{$request->search}%")
-              ->orWhere('description', 'like', "%{$request->search}%");
-        })
-->when($request->category, fn($q) => $q->where('category', $request->category))
-->when($request->name, fn($q) => $q->where('name', 'like', "%{$request->name}%"))
-        ->latest()
-        ->get();
+    {
+        try {
+            $products = Product::where('user_id', Auth::id())
+                ->when($request->search, function ($q) use ($request) {
+                    $q->where('name', 'like', "%{$request->search}%")
+                        ->orWhere('description', 'like', "%{$request->search}%");
+                })
+                ->when($request->category, fn($q) => $q->where('category', $request->category))
+                ->when($request->name, fn($q) => $q->where('name', 'like', "%{$request->name}%"))
+                ->latest()
+                ->get();
 
-    return view('products.index', compact('products'));
-}
+            return view('products.index', compact('products'));
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load products: ' . $e->getMessage());
+        }
+    }
+
     public function create()
     {
-        return view('products.create', ['categories' => $this->categories]);
+        try {
+            return view('products.create', ['categories' => $this->categories]);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to open create page: ' . $e->getMessage());
+        }
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'name'        => 'required|string|max:255',
-        'price'       => 'required|numeric|min:1',
-        'category'    => 'required|in:' . implode(',', $this->categories),
-        'description' => 'nullable|string',
-        'image'       => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
-    ]);
+    {
+        try {
+            $request->validate([
+                'name'        => 'required|string|max:255',
+                'price'       => 'required|numeric|min:1',
+                'category'    => 'required|in:' . implode(',', $this->categories),
+                'description' => 'nullable|string',
+                'image'       => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+            ]);
 
-    $path = $request->file('image')->store('products', 'public');
+            $path = $request->file('image')->store('products', 'public');
 
-    Product::create([
-        'user_id'     => Auth::id(),
-        'name'        => $request->name,
-        'price'       => $request->price,
-        'category'    => $request->category,
-        'description' => $request->description,
-        'image'       => $path,
-    ]);
+            Product::create([
+                'user_id'     => Auth::id(),
+                'name'        => $request->name,
+                'price'       => $request->price,
+                'category'    => $request->category,
+                'description' => $request->description,
+                'image'       => $path,
+            ]);
 
-    
-    Auth::user()->increment('products_count');
+            Auth::user()->increment('products_count');
 
-    return redirect()->route('products.index')
-                     ->with('success', 'Product added successfully!');
-}
-    public function update(Request $request, Product $product)
-{
-    if ($product->user_id !== Auth::id()) {
-        abort(403);
-    }
-
-    $request->validate([
-        'name'        => 'required|string|max:255',
-        'price'       => 'required|numeric|min:1',
-        'category'    => 'required|string',
-        'description' => 'nullable|string',
-        'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-    ]);
-
-    $data = $request->only(['name', 'price', 'category', 'description']);
-
-    if ($request->hasFile('image')) {
-        // Delete old image
-        if ($product->image) {
-            Storage::disk('public')->delete($product->image);
+            return redirect()->route('products.index')
+                ->with('success', 'Product added successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to add product: ' . $e->getMessage());
         }
-        $data['image'] = $request->file('image')->store('products', 'public');
     }
 
-    $product->update($data);
+    public function update(Request $request, Product $product)
+    {
+        try {
+            if ($product->user_id !== Auth::id()) {
+                abort(403);
+            }
 
-    return redirect()->route('products.index')->with('success', 'Product updated successfully!');
-}
+            $request->validate([
+                'name'        => 'required|string|max:255',
+                'price'       => 'required|numeric|min:1',
+                'category'    => 'required|string',
+                'description' => 'nullable|string',
+                'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            ]);
+
+            $data = $request->only(['name', 'price', 'category', 'description']);
+
+            if ($request->hasFile('image')) {
+                if ($product->image) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            $product->update($data);
+
+            return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Update failed: ' . $e->getMessage());
+        }
+    }
 
     public function destroy(Product $product)
     {
-        $this->authorizeUser($product);
-        if ($product->image) Storage::disk('public')->delete($product->image);
-        $product->delete();
-        Auth::user()->decrement('products_count');
+        try {
+            $this->authorizeUser($product);
 
-        return back()->with('success', 'Product deleted!');
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $product->delete();
+
+            Auth::user()->decrement('products_count');
+
+            return back()->with('success', 'Product deleted!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Deletion failed: ' . $e->getMessage());
+        }
     }
 
     private function authorizeUser($product)
@@ -112,95 +136,118 @@ class ProductController extends Controller
     }
 
     // Add to Cart (Simple Session Based)
-  public function addToCart(Product $product)
-{
-    $cart = session('cart', []);
-    
-    // If already in cart, just increase qty (optional)
-    if (isset($cart[$product->id])) {
-        $cart[$product->id]['quantity'] = ($cart[$product->id]['quantity'] ?? 1) + 1;
-    } else {
-        $cart[$product->id] = [
-            'id' => $product->id,
-            'name' => $product->name,
-            'price' => $product->price,
-            'image' => $product->image,
-            'quantity' => 1,
-        ];
+    public function addToCart(Product $product)
+    {
+        try {
+            $cart = session('cart', []);
+
+            if (isset($cart[$product->id])) {
+                $cart[$product->id]['quantity'] = ($cart[$product->id]['quantity'] ?? 1) + 1;
+            } else {
+                $cart[$product->id] = [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'image' => $product->image,
+                    'quantity' => 1,
+                ];
+            }
+
+            session(['cart' => $cart]);
+
+            return back()->with('success', " '{$product->name}' added to cart!");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to add to cart: ' . $e->getMessage());
+        }
     }
 
-    session(['cart' => $cart]);
-
-    return back()->with('success', " '{$product->name}' added to cart!");
-}
     public function removeFromCart($id)
-{
-    $cart = session('cart', []);
-    unset($cart[$id]);
-    session(['cart' => $cart]);
+    {
+        try {
+            $cart = session('cart', []);
+            unset($cart[$id]);
+            session(['cart' => $cart]);
 
-    return back()->with('success', 'Item removed from cart!');
-}
-public function edit(Product $product)
-{
-    // Security: only owner can edit
-    if ($product->user_id !== Auth::id()) {
-        abort(403);
+            return back()->with('success', 'Item removed from cart!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to remove item: ' . $e->getMessage());
+        }
     }
 
-    $categories = ['Mobile Phones','Laptops','Fashion','Sports','Fruits','Bikes','Furniture','Other'];
+    public function edit(Product $product)
+    {
+        try {
+            if ($product->user_id !== Auth::id()) {
+                abort(403);
+            }
 
-    return view('products.edit', compact('product', 'categories'));
-}
-public function show(Product $product)
-{
-    // Optional: Only allow owner to view (or remove this if you want public view)
-    if ($product->user_id !== Auth::id()) {
-        abort(403, 'This is not your product!');
+            $categories = ['Mobile Phones','Laptops','Fashion','Sports','Fruits','Bikes','Furniture','Other'];
+
+            return view('products.edit', compact('product', 'categories'));
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load edit page: ' . $e->getMessage());
+        }
     }
 
-    return view('products.show', compact('product'));
-}
-public function checkoutSingle($id)
-{
-    $product = Product::findOrFail($id);
+    public function show(Product $product)
+    {
+        try {
+            if ($product->user_id !== Auth::id()) {
+                abort(403, 'This is not your product!');
+            }
 
-    // Store single item for "Buy Now"
-    $item = [
-        'id'    => $product->id,
-        'name'  => $product->name,
-        'price' => $product->price,
-        'image' => $product->image,
-    ];
-
-    // Remove from cart if already added
-    $cart = session('cart', []);
-    unset($cart[$id]);
-    session(['cart' => $cart]);
-
-    // Pass as $items array (same format as cart)
-    return view('checkout.index', ['items' => [$item]]);
-}
-
-public function checkout()
-{
-    $cart = session('cart', []);
-
-    if (empty($cart)) {
-        return redirect()->route('products.index')->with('error', 'Your cart is empty');
+            return view('products.show', compact('product'));
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load product: ' . $e->getMessage());
+        }
     }
 
-    // Convert cart to same format as Buy Now
-    $items = [];
-    foreach ($cart as $id => $item) {
-        $items[] = [
-            'id'    => $id,
-            'name'  => $item['name'],
-            'price' => $item['price'],
-            'image' => $item['image'] ?? null,
-        ];
+    public function checkoutSingle($id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+
+            $item = [
+                'id'    => $product->id,
+                'name'  => $product->name,
+                'price' => $product->price,
+                'image' => $product->image,
+            ];
+
+            $cart = session('cart', []);
+            unset($cart[$id]);
+            session(['cart' => $cart]);
+
+            return view('checkout.index', ['items' => [$item]]);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load checkout: ' . $e->getMessage());
+        }
     }
 
-    return view('checkout.index', compact('items'));
-} }
-    
+    public function checkout()
+    {
+        try {
+            $cart = session('cart', []);
+
+            if (empty($cart)) {
+                return redirect()->route('products.index')->with('error', 'Your cart is empty');
+            }
+
+            $items = [];
+            foreach ($cart as $id => $item) {
+                $items[] = [
+                    'id'    => $id,
+                    'name'  => $item['name'],
+                    'price' => $item['price'],
+                    'image' => $item['image'] ?? null,
+                ];
+            }
+
+            return view('checkout.index', compact('items'));
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load checkout page: ' . $e->getMessage());
+        }
+    }
+}

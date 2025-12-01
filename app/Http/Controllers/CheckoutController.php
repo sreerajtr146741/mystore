@@ -9,49 +9,74 @@ class CheckoutController extends Controller
     // Show checkout page
     public function index()
     {
-        return view('checkout');
+        try {
+            return view('checkout');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load checkout page: ' . $e->getMessage());
+        }
     }
 
     // Process checkout form
     public function process(Request $request)
     {
-        $request->validate([
-            'full_name' => 'required',
-            'address'   => 'required',
-            'phone'     => 'required',
-            'pincode'   => 'required',
-        ]);
+        try {
+            $request->validate([
+                'full_name' => 'required',
+                'address'   => 'required',
+                'phone'     => 'required',
+                'pincode'   => 'required',
+            ]);
 
-        // (Optional) Save order or temporary checkout details
-        // Order::create([...]);
+            // (Optional) Save order or temporary checkout details
+            // Order::create([...]);
 
-        return redirect()->route('checkout.success');
+            return redirect()->route('checkout.success');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Checkout failed: ' . $e->getMessage());
+        }
     }
 
     // Success page
     public function success()
     {
-        return view('checkout.success');
+        try {
+            return view('checkout.success');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load success page: ' . $e->getMessage());
+        }
     }
 
     // Cancel payment
     public function cancel(Request $request)
     {
-        // Cleanup if needed
-        // session()->forget('checkout');
+        try {
+            // Cleanup if needed
+            // session()->forget('checkout');
 
-        return redirect()->route('products.index')
-            ->with('status', 'Payment cancelled.');
+            return redirect()->route('products.index')
+                ->with('status', 'Payment cancelled.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to cancel payment: ' . $e->getMessage());
+        }
     }
-     // Continue order placing...
-    public function placeOrder(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string',
-        'phone' => 'required|string',
-        'email' => 'required|email',
-        'address' => 'required|string',
-    ]);
-}
 
+    // Continue order placing...
+    public function placeOrder(Request $request)
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string',
+                'phone' => 'required|string',
+                'email' => 'required|email',
+                'address' => 'required|string',
+            ]);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Order placement failed: ' . $e->getMessage());
+        }
+    }
 }

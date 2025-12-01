@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Testing\Fluent\Concerns\Has;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use HasApiTokens;
-
+  use HasApiTokens, HasFactory, Notifiable;
    protected $fillable = [
     'name','email','password','phone','address','profile_photo',                
 ];
