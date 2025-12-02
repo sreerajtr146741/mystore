@@ -59,8 +59,7 @@ class AuthController extends Controller
 
             if (auth()->attempt($credentials, $remember)) {
                 $request->session()->regenerate();
-                return redirect()->intended(route('products.index'));
-            }
+            return redirect()->route('home');            }
 
             return back()->withErrors(['email' => 'Invalid credentials'])->onlyInput('email');
 
