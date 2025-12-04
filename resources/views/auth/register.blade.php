@@ -113,7 +113,7 @@
     </div>
   </div>
 
-  <!-- show/hide password (no backend change) -->
+  <!-- show/hide password  -->
   <script>
     function toggle(id){
       const el = document.getElementById(id);

@@ -1,23 +1,61 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\Auth\RedirectController;
-use App\Http\Controllers\Seller\DashboardController as SellerDashboardController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\UserManagementController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 
-// --------------------
-// ROOT
-// --------------------
-Route::get('/', fn () => auth()->check() ? redirect()->route('home') : redirect()->route('login'))
-    ->name('root');
+// Admin controllers
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\DiscountController;
+use App\Http\Controllers\Admin\ProductManageController;
+use App\Http\Controllers\Admin\RevenueController;
+use App\Http\Controllers\Admin\UserController;
 
-// --------------------
-// GUEST ROUTES
-// --------------------
+/*
+|--------------------------------------------------------------------------
+| ROOT
+|--------------------------------------------------------------------------
+*/
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('products.index')
+        : redirect()->route('register');
+})->name('root');
+
+/*
+|--------------------------------------------------------------------------
+| PUBLIC CATALOG (no auth)
+|--------------------------------------------------------------------------
+*/
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+
+/*
+|--------------------------------------------------------------------------
+| CART + CHECKOUT (ALLOW GUESTS)
+|--------------------------------------------------------------------------
+*/
+Route::get('/cart', fn () => view('cart.index'))->name('cart.index');
+Route::post('/cart/add/{product}', [ProductController::class, 'addToCart'])->name('cart.add');
+Route::delete('/cart/{id}', [ProductController::class, 'removeFromCart'])->name('cart.remove');
+
+Route::get('/checkout/product/{id}', [ProductController::class, 'checkoutSingle'])->name('checkout.single');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::post('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+
+Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
+Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
+
+/*
+|--------------------------------------------------------------------------
+| GUEST AUTH
+|--------------------------------------------------------------------------
+*/
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -26,67 +64,53 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// --------------------
-// AUTHENTICATED ROUTES
-// --------------------
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATED
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
-
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // After login redirect
-    Route::get('/home', RedirectController::class)->name('home');
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // ------------------------
-    // BUYER PRODUCT ROUTES
-    // ------------------------
-    Route::resource('products', ProductController::class);
-
-    // ------------------------
-    // CART ROUTES
-    // ------------------------
-    Route::post('/cart/add/{product}', [ProductController::class, 'addToCart'])->name('cart.add');
-    Route::post('/cart/remove/{id}', [ProductController::class, 'removeFromCart'])->name('cart.remove');
-    Route::get('/cart', fn () => view('cart.index'))->name('cart.index');
-
-    // ------------------------
-    // CHECKOUT ROUTES
-    // ------------------------
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
-    Route::get('/checkout/product/{id}', [ProductController::class, 'checkoutSingle'])->name('checkout.single');
-    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
-    Route::post('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
-
-    // ------------------------
-    // PROFILE
-    // ------------------------
+    // Profile
     Route::get('/profile/edit', fn () => view('profile.edit'))->name('profile.edit');
     Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('profile.update');
 
-    // ------------------------
-    // SELLER PORTAL
-    // ------------------------
-    Route::prefix('seller')->name('seller.')->middleware('seller')->group(function () {
-        Route::get('/dashboard', [SellerDashboardController::class, 'index'])->name('dashboard');
-        Route::resource('products', ProductController::class)->except(['index', 'show']);
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN PANEL
+    |--------------------------------------------------------------------------
+    | If you use Spatie roles, change to ->middleware(['role:admin'])
+    */
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
 
-    // Optional seller product list
-    Route::get('/my-products', [ProductController::class, 'index'])->name('my-products');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // ------------------------
-    // ADMIN PANEL
-    // ------------------------
-    Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        // Users (admin view)
+        Route::get('/users', [UserController::class, 'index'])->name('users');
+        Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.status');
+        Route::delete('/users/{user}',       [UserController::class, 'destroy'])->name('users.destroy');
 
-        // User management
-        Route::get('/users', [UserManagementController::class, 'index'])->name('users');
-        Route::patch('/users/{user}/role', [UserManagementController::class, 'updateRole'])->name('users.updateRole');
+        // Orders
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders');
 
-        // Seller Applications
-        Route::get('/applications', [\App\Http\Controllers\Admin\SellerApplicationController::class, 'index'])->name('applications');
-        Route::patch('/applications/{application}', [\App\Http\Controllers\Admin\SellerApplicationController::class, 'approve'])->name('applications.approve');
+        // Global Discounts
+        Route::get('/discounts/global',  [DiscountController::class, 'edit'])->name('discounts.global.edit');
+        Route::post('/discounts/global', [DiscountController::class, 'update'])->name('discounts.global.update');
+
+        // Products (ADMIN CRUD)
+        Route::get   ('/products/manage',         [ProductManageController::class, 'index'])->name('products.manage');
+        Route::get   ('/products/create',         [ProductManageController::class, 'create'])->name('products.create'); // used by Blade
+        Route::post  ('/products',                [ProductManageController::class, 'store'])->name('products.store');
+        Route::get   ('/products/{product}/edit', [ProductManageController::class, 'edit'])->name('products.edit');
+        Route::put   ('/products/{product}',      [ProductManageController::class, 'update'])->name('products.update');
+        Route::delete('/products/{product}',      [ProductManageController::class, 'destroy'])->name('products.destroy');
+
+        // Revenue
+        Route::get('/revenue', [RevenueController::class, 'index'])->name('revenue');
     });
 });

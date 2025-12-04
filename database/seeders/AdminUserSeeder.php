@@ -1,22 +1,19 @@
-<?php
-
-namespace Database\Seeders;
-
-use App\Models\User;
+// database/seeders/AdminUserSeeder.php
 use Illuminate\Database\Seeder;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-class AdminSeeder extends Seeder
+class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
         User::updateOrCreate(
             ['email' => 'admin@store.com'],
             [
-                'name' => 'Super Admin',
-                'email' => 'admin@store.com',
+                'name' => 'Admin',
                 'password' => Hash::make('admin123'),
                 'role' => 'admin',
+                'status' => 'active',
             ]
         );
     }

@@ -28,26 +28,26 @@
 <body>
 
 @php
-    // Prefer controller-provided $items; else fallback to session cart
-    // Session cart shape: [productId => ['name','price','qty','image','category','description']]
-    $items = $items ?? array_values(session('cart', []));
-
-    // Normalize items
-    $normItems = collect($items)->map(function($it){
+    /**
+     * Expect from controller:
+     * $items, $subtotal, $shipping, $discount, $total, $coupon
+     * Fallbacks below keep page working if not passed (e.g. first render).
+     */
+    $items    = $items    ?? array_values(session('cart', []));
+    $items    = collect($items)->map(function ($it) {
         $qty   = (int)($it['qty'] ?? 1);
         $price = (float)($it['price'] ?? 0);
-        return array_merge($it, [
-            'qty'        => $qty,
-            'price'      => $price,
-            'line_total' => $qty * $price,
-        ]);
-    });
+        return array_merge($it, ['qty'=>$qty,'price'=>$price,'line_total'=>$qty*$price]);
+    })->values();
 
-    $subtotal = (float) $normItems->sum('line_total');
-    $shipping = $subtotal < 300 && $subtotal > 0 ? 59.0 : 0.0;
-    $total = $subtotal + $shipping;
+    // Use controller totals if set; else compute quick fallback (no coupons)
+    $subtotal = isset($subtotal) ? (float)$subtotal : (float)$items->sum('line_total');
+    $shipping = isset($shipping) ? (float)$shipping : ($subtotal > 0 && $subtotal < 300 ? 59.0 : 0.0);
+    $discount = isset($discount) ? (float)$discount : 0.0;
+    $total    = isset($total)    ? (float)$total    : max(0.0, ($subtotal - $discount) + $shipping);
+    $coupon   = $coupon ?? session('coupon_code');
 
-    // Pre-fill delivery details from authenticated user if present
+    // Prefill delivery details
     $u = auth()->user();
     $prefillName    = old('full_name', $u->name ?? '');
     $prefillPhone   = old('phone',     $u->phone ?? '');
@@ -67,7 +67,7 @@
 
                 <div class="card-body p-5">
 
-                    @forelse($normItems as $item)
+                    @forelse($items as $item)
                         <div class="d-flex gap-4 py-4 border-bottom">
                             @if(!empty($item['image']))
                                 <img src="{{ asset('storage/'.$item['image']) }}" width="90" class="rounded-3 shadow" alt="Product">
@@ -96,25 +96,48 @@
                         </div>
                     @endforelse
 
-                    <div class="bg-light rounded-4 p-4 mt-4">
-                        <div class="d-flex justify-content-between mb-3">
-                            <span class="fs-5">Subtotal</span>
-                            <strong class="fs-5">₹{{ number_format($subtotal) }}</strong>
+                    {{-- Coupon alert (if applied) --}}
+                    @if($coupon)
+                        <div class="alert alert-success py-2 mt-4">
+                            Applied coupon: <strong>{{ $coupon }}</strong>
+                            <form action="{{ route('checkout.coupon.remove') }}" method="POST" class="d-inline ms-2">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-link p-0 align-baseline">Remove</button>
+                            </form>
                         </div>
+                    @endif
 
-                        <div class="d-flex justify-content-between mb-3 {{ $shipping == 0 ? 'text-success' : 'text-warning' }}">
-                            <span class="fs-5">Delivery Charge</span>
-                            <strong class="fs-5">
-                                {{ $shipping == 0 ? 'FREE' : '₹'.number_format($shipping) }}
-                            </strong>
-                        </div>
+                    {{-- Totals --}}
+                    <div class="bg-light rounded-4 p-4 mt-3">
+                        <ul class="list-group mb-3">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Subtotal</span>
+                                <strong>₹{{ number_format($subtotal, 2) }}</strong>
+                            </li>
+                            @if($discount > 0)
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Discount</span>
+                                    <strong>-₹{{ number_format($discount, 2) }}</strong>
+                                </li>
+                            @endif
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Shipping</span>
+                                <strong>{{ $shipping == 0 ? 'FREE' : '₹'.number_format($shipping, 2) }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>Total</span>
+                                <strong>₹{{ number_format($total, 2) }}</strong>
+                            </li>
+                        </ul>
 
-                        <hr class="my-3">
-
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h4 class="fw-bold mb-0">Total Amount</h4>
-                            <h2 class="price mb-0">₹{{ number_format($total) }}</h2>
-                        </div>
+                        {{-- Coupon apply form --}}
+                        <form action="{{ route('checkout.coupon.apply') }}" method="POST" class="mb-1">
+                            @csrf
+                            <div class="input-group">
+                                <input name="coupon_code" class="form-control" placeholder="Have a coupon?" value="">
+                                <button class="btn btn-outline-secondary" type="submit">Apply</button>
+                            </div>
+                        </form>
                     </div>
 
                 </div>
@@ -230,7 +253,7 @@
                         <input type="hidden" name="total" value="{{ $total }}">
 
                         <button type="submit" class="btn btn-pay text-white shadow-lg w-100 mt-4" {{ $total <= 0 ? 'disabled' : '' }}>
-                            Pay ₹{{ number_format($total) }}
+                            Pay ₹ {{ number_format($total ?? 0, 2) }}
                         </button>
                     </form>
 

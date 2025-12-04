@@ -4,181 +4,94 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    // Simple Categories
+    /**
+     * Master categories list (shown in forms)
+     */
     private array $categories = [
-        'Mobile Phones', 'Laptops', 'Tablets', 'Smart Watches',
-        'Headphones', 'Cameras', 'TVs', 'Gaming',
-        'Fashion', 'Shoes', 'Bags', 'Watches',
-        'Furniture', 'Home Decor', 'Kitchen',
-        'Sports', 'Gym & Fitness',
-        'Vehicles', 'Cars', 'Bikes', 'Accessories',
-        'Fruits', 'Vegetables', 'Groceries',
-        'Books', 'Toys', 'Other'
+        'Mobile Phones','Laptops','Tablets','Smart Watches',
+        'Headphones','Cameras','TVs','Gaming',
+        'Fashion','Shoes','Bags','Watches',
+        'Furniture','Home Decor','Kitchen',
+        'Sports','Gym & Fitness',
+        'Vehicles','Cars','Bikes','Accessories',
+        'Fruits','Vegetables','Groceries',
+        'Books','Toys','Other'
     ];
+
+    /* --------------------------------------------------------------------
+     | PUBLIC CATALOG
+     |---------------------------------------------------------------------*/
 
     public function index(Request $request)
     {
         try {
-            $products = Product::where('user_id', Auth::id())
-                ->when($request->search, function ($q) use ($request) {
-                    // group name/description search together
-                    $q->where(function ($qq) use ($request) {
-                        $qq->where('name', 'like', "%{$request->search}%")
-                           ->orWhere('description', 'like', "%{$request->search}%");
-                    });
-                })
-                ->when($request->category, fn($q) => $q->where('category', $request->category))
-                ->when($request->name, fn($q) => $q->where('name', 'like', "%{$request->name}%"))
-                ->latest()
-                ->get();
 
-            return view('products.index', compact('products'));
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to load products: ' . $e->getMessage());
-        }
-    }
+            $category = $request->query('category');
 
-    public function create()
-    {
-        try {
-            return view('products.create', ['categories' => $this->categories]);
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to open create page: ' . $e->getMessage());
-        }
-    }
+            $query = Product::query();
 
-    public function store(Request $request)
-    {
-        try {
-            $request->validate([
-                'name'        => 'required|string|max:255',
-                'price'       => 'required|numeric|min:1',
-                'category'    => 'required|in:' . implode(',', $this->categories),
-                'description' => 'nullable|string',
-                'image'       => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
-            ]);
-
-            $path = $request->file('image')->store('products', 'public');
-
-            Product::create([
-                'user_id'     => Auth::id(),
-                'name'        => $request->name,
-                'price'       => $request->price,
-                'category'    => $request->category,
-                'description' => $request->description,
-                'image'       => $path,
-            ]);
-
-            // optional: if you track this on users table
-            optional(Auth::user())->increment('products_count');
-
-            return redirect()->route('products.index')
-                ->with('success', 'Product added successfully!');
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to add product: ' . $e->getMessage());
-        }
-    }
-
-    public function edit(Product $product)
-    {
-        try {
-            $this->authorizeOwner($product);
-            $categories = $this->categories;
-
-            return view('products.edit', compact('product', 'categories'));
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to load edit page: ' . $e->getMessage());
-        }
-    }
-
-    public function update(Request $request, Product $product)
-    {
-        try {
-            $this->authorizeOwner($product);
-
-            $request->validate([
-                'name'        => 'required|string|max:255',
-                'price'       => 'required|numeric|min:1',
-                'category'    => 'required|in:' . implode(',', $this->categories),
-                'description' => 'nullable|string',
-                'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            ]);
-
-            $data = $request->only(['name', 'price', 'category', 'description']);
-
-            if ($request->hasFile('image')) {
-                if ($product->image) {
-                    Storage::disk('public')->delete($product->image);
-                }
-                $data['image'] = $request->file('image')->store('products', 'public');
+            if (Schema::hasColumn('products', 'is_active')) {
+                $query->where('is_active', true);
+            } elseif (Schema::hasColumn('products', 'status')) {
+                $query->where('status', 'active');
             }
 
-            $product->update($data);
+            if ($category) {
+                $query->where('category', $category);
+            }
 
-            return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+            $products = $query->latest()->paginate(12);
+
+            return view('products.index', compact('products'));
+
         } catch (\Throwable $e) {
-            return back()->with('error', 'Update failed: ' . $e->getMessage());
+            \Log::error('Product index error: '.$e->getMessage());
+            return back()->with('error', 'Unable to load products.');
         }
     }
 
     public function show(Product $product)
     {
         try {
-            $this->authorizeOwner($product);
-            return view('products.show', compact('product'));
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to load product: ' . $e->getMessage());
-        }
-    }
 
-    public function destroy(Product $product)
-    {
-        try {
-            $this->authorizeOwner($product);
-
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+            if (Schema::hasColumn('products', 'is_active')) {
+                abort_unless((bool)($product->is_active ?? false), 404);
+            } elseif (Schema::hasColumn('products', 'status')) {
+                abort_unless(($product->status ?? '') === 'active', 404);
             }
-            $product->delete();
 
-            optional(Auth::user())->decrement('products_count');
+            return view('products.show', compact('product'));
 
-            return back()->with('success', 'Product deleted!');
         } catch (\Throwable $e) {
-            return back()->with('error', 'Deletion failed: ' . $e->getMessage());
+            \Log::error('Product show error: '.$e->getMessage());
+            return back()->with('error', 'Unable to load product.');
         }
     }
 
-    private function authorizeOwner(Product $product): void
-    {
-        if ($product->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized');
-        }
-    }
+    /* --------------------------------------------------------------------
+     | CART + CHECKOUT
+     |---------------------------------------------------------------------*/
 
-    /**
-     * Add to Cart (Session)
-     * Cart structure: [ productId => [id, name, price, image, qty, category, description] ]
-     */
-    public function addToCart(Product $product)
+    public function addToCart(Request $request, Product $product)
     {
         try {
+
+            $qty = max(1, (int) $request->input('qty', 1));
             $cart = session('cart', []);
 
             if (isset($cart[$product->id])) {
-                $cart[$product->id]['qty'] = (int)($cart[$product->id]['qty'] ?? 1) + 1;
+                $cart[$product->id]['qty'] += $qty;
             } else {
                 $cart[$product->id] = [
-                    'id'          => $product->id,
                     'name'        => $product->name,
                     'price'       => (float) $product->price,
+                    'qty'         => $qty,
                     'image'       => $product->image,
-                    'qty'         => 1,
                     'category'    => $product->category,
                     'description' => $product->description,
                 ];
@@ -186,72 +99,69 @@ class ProductController extends Controller
 
             session(['cart' => $cart]);
 
-            return back()->with('success', "'{$product->name}' added to cart!");
+            $totalQty = collect($cart)->sum('qty');
+            return redirect()->route('cart.index')
+                ->with('success', "{$product->name} added to cart. ({$qty} added, {$totalQty} total items)");
+
         } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to add to cart: ' . $e->getMessage());
+            \Log::error('Add to cart error: '.$e->getMessage());
+            return back()->with('error', 'Unable to add item to cart.');
         }
     }
 
     public function removeFromCart($id)
     {
         try {
+
             $cart = session('cart', []);
             if (isset($cart[$id])) {
                 unset($cart[$id]);
                 session(['cart' => $cart]);
             }
-
             return back()->with('success', 'Item removed from cart!');
+
         } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to remove item: ' . $e->getMessage());
+            \Log::error('Remove cart error: '.$e->getMessage());
+            return back()->with('error', 'Unable to remove item from cart.');
         }
     }
 
-    /**
-     * Buy Now: checkout a single product (qty=1) using the same checkout flow.
-     * We temporarily set the session cart to just this item, then show checkout page.
-     * (If you want to preserve the old cart, you can stash it under another key.)
-     */
-    public function checkoutSingle($id)
-{
-    try {
-        $product = \App\Models\Product::findOrFail($id);
+    public function checkoutSingle(Request $request, $id)
+    {
+        try {
 
-        $checkoutItems = [[
-            'id'          => $product->id,
-            'name'        => $product->name,
-            'price'       => (float) $product->price,
-            'qty'         => 1,
-            'image'       => $product->image,
-            'category'    => $product->category,
-            'description' => $product->description,
-        ]];
+            $product = Product::findOrFail($id);
+            $qty = max(1, (int) $request->query('qty', 1));
 
-        // put into stash used by CheckoutController@index/process
-        session(['checkout_items' => $checkoutItems]);
+            session(['checkout_items' => [[
+                'id'          => $product->id,
+                'name'        => $product->name,
+                'price'       => (float) $product->price,
+                'qty'         => $qty,
+                'image'       => $product->image,
+                'category'    => $product->category,
+                'description' => $product->description,
+            ]]]);
 
-        // go to payment page
-        return redirect()->route('checkout.index'); // <-- correct route name
-    } catch (\Throwable $e) {
-        return back()->with('error', 'Failed to load checkout: ' . $e->getMessage());
+            return redirect()->route('checkout.index');
+
+        } catch (\Throwable $e) {
+            \Log::error('Checkout single error: '.$e->getMessage());
+            return back()->with('error', 'Unable to open checkout.');
+        }
     }
-}
 
-    /**
-     * Checkout full cart.
-     */
     public function checkout()
     {
         try {
-            $cart = session('cart', []);
 
+            $cart = session('cart', []);
             if (empty($cart)) {
                 return redirect()->route('products.index')->with('error', 'Your cart is empty');
             }
 
-            // Normalize items for the view; CheckoutController will recompute server-side totals again
             $items = collect($cart)->map(function ($item) {
-                $qty = (int)($item['qty'] ?? 1);
+                $qty   = (int)($item['qty'] ?? 1);
                 $price = (float)($item['price'] ?? 0);
                 return array_merge($item, [
                     'qty'        => $qty,
@@ -261,8 +171,166 @@ class ProductController extends Controller
             })->values()->all();
 
             return view('checkout.index', compact('items'));
+
         } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to load checkout page: ' . $e->getMessage());
+            \Log::error('Checkout error: '.$e->getMessage());
+            return back()->with('error', 'Unable to load checkout.');
+        }
+    }
+
+    /* --------------------------------------------------------------------
+     | ADMIN PRODUCT MANAGEMENT
+     |---------------------------------------------------------------------*/
+
+    public function adminManage(Request $request)
+    {
+        try {
+
+            $q = $request->input('q');
+
+            $query = Product::query()->with('user:id,name');
+
+            if ($q) {
+                $query->where(function ($w) use ($q) {
+                    $w->where('name', 'like', "%{$q}%")
+                      ->orWhere('sku', 'like', "%{$q}%")
+                      ->orWhere('id', $q);
+                });
+            }
+
+            $products   = $query->latest()->paginate(12);
+            $categories = $this->categories;
+
+            return view('admin.products.index', compact('products', 'categories', 'q'));
+
+        } catch (\Throwable $e) {
+            \Log::error('Admin manage error: '.$e->getMessage());
+            return back()->with('error', 'Unable to load admin products.');
+        }
+    }
+
+    public function adminCreate()
+    {
+        try {
+
+            $categories = $this->categories;
+            return view('admin.products.create', compact('categories'));
+
+        } catch (\Throwable $e) {
+            \Log::error('Admin create error: '.$e->getMessage());
+            return back()->with('error', 'Unable to open create form.');
+        }
+    }
+
+    public function adminStore(Request $request)
+    {
+        try {
+
+            $data = $request->validate([
+                'name'            => 'required|string|max:255',
+                'price'           => 'required|numeric|min:0',
+                'stock'           => 'required|integer|min:0',
+                'category'        => 'nullable|string|max:255',
+                'sku'             => 'nullable|string|max:64',
+                'description'     => 'nullable|string|max:300',
+                'is_active'       => 'nullable|boolean',
+                'discount_type'   => 'nullable|in:percent,flat',
+                'discount_value'  => 'nullable|numeric|min:0',
+                'image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            ]);
+
+            if ($request->hasFile('image')) {
+                $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            $data['user_id']   = $request->user()->id;
+            $data['is_active'] = $request->boolean('is_active');
+
+            Product::create($data);
+
+            return redirect()->route('products.index')->with('success', 'Product added and published!');
+
+        } catch (\Throwable $e) {
+            \Log::error('Admin store error: '.$e->getMessage());
+            return back()->with('error', 'Unable to add product.');
+        }
+    }
+
+    public function adminEdit(Product $product)
+    {
+        try {
+
+            if (!auth()->user()->isAdmin() && auth()->id() !== $product->user_id) {
+                abort(403, 'Unauthorized');
+            }
+
+            $categories = $this->categories;
+            return view('admin.products.edit', compact('product', 'categories'));
+
+        } catch (\Throwable $e) {
+            \Log::error('Admin edit error: '.$e->getMessage());
+            return back()->with('error', 'Unable to load edit form.');
+        }
+    }
+
+    public function adminUpdate(Request $request, Product $product)
+    {
+        try {
+
+            if (!auth()->user()->isAdmin() && auth()->id() !== $product->user_id) {
+                abort(403, 'Unauthorized');
+            }
+
+            $data = $request->validate([
+                'name'            => 'required|string|max:255',
+                'price'           => 'required|numeric|min:0',
+                'stock'           => 'required|integer|min:0',
+                'category'        => 'nullable|string|max:255',
+                'sku'             => 'nullable|string|max:64',
+                'description'     => 'nullable|string|max:300',
+                'is_active'       => 'nullable|boolean',
+                'discount_type'   => 'nullable|in:percent,flat',
+                'discount_value'  => 'nullable|numeric|min:0',
+                'image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            ]);
+
+            if ($request->hasFile('image')) {
+                if ($product->image) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            $data['is_active'] = $request->boolean('is_active');
+
+            $product->update($data);
+
+            return redirect()->route('admin.products.manage')->with('success', 'Product updated.');
+
+        } catch (\Throwable $e) {
+            \Log::error('Admin update error: '.$e->getMessage());
+            return back()->with('error', 'Unable to update product.');
+        }
+    }
+
+    public function adminDestroy(Product $product)
+    {
+        try {
+
+            if (!auth()->user()->isAdmin() && auth()->id() !== $product->user_id) {
+                abort(403, 'Unauthorized');
+            }
+
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $product->delete();
+
+            return back()->with('success', 'Product deleted.');
+
+        } catch (\Throwable $e) {
+            \Log::error('Admin destroy error: '.$e->getMessage());
+            return back()->with('error', 'Unable to delete product.');
         }
     }
 }

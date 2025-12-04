@@ -11,13 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Register your custom role middleware here
+        // Register middleware aliases
         $middleware->alias([
-            'admin'  => \App\Http\Middleware\IsAdmin::class,
-            'seller' => \App\Http\Middleware\IsSeller::class,
+            'role'   => \App\Http\Middleware\Role::class,     // <-- ADD THIS
+            'admin'  => \App\Http\Middleware\IsAdmin::class,  // (optional, if you use it)
+            'seller' => \App\Http\Middleware\IsSeller::class, // (optional, if you use it)
         ]);
 
-        // Optional: you can also add other common aliases
         // $middleware->redirectGuestsTo(fn () => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions) {

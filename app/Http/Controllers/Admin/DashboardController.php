@@ -7,19 +7,24 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    // app/Http/Controllers/Admin/DashboardController.php
+    public function index()
+    {
+        try {
+            $stats = [
+                'total_users' => \App\Models\User::count(),
+                'sellers' => \App\Models\User::where('role', 'seller')->count(),
+                'pending_apps' => \App\Models\SellerApplication::where('status', 'pending')->count(),
+            ];
 
-public function index()
-{
-    $stats = [
-        'total_users'     => \App\Models\User::count(),
-        'sellers'         => \App\Models\User::where('role', 'seller')->count(),
-        'total_products'  => \App\Models\Product::count(),
-        'pending_sellers' => \App\Models\SellerApplication::where('status', 'pending')->count(),
-        'today_revenue'   => 124500,   // ← Replace with real logic later
-        'new_today'       => \App\Models\Product::whereDate('created_at', today())->count(),
-    ];
+            return view('admin.dashboard', compact('stats'));
 
-    return view('admin.dashboard', compact('stats'));
-}
+        } catch (\Exception $e) {
+
+            // You can log the error
+            \Log::error('Dashboard load failed: '.$e->getMessage());
+
+            // Return fallback view or redirect with error message
+            return back()->with('error', 'Unable to load Dashboard. Please try again.');
+        }
+    }
 }

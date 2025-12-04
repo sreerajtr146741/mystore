@@ -9,9 +9,18 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $productsCount = auth()->user()->products()->count();
-        $totalSales = auth()->user()->products()->sum('price'); // placeholder
+        try {
 
-        return view('seller.dashboard', compact('productsCount', 'totalSales'));
+            $productsCount = auth()->user()->products()->count();
+            $totalSales = auth()->user()->products()->sum('price'); // placeholder
+
+            return view('seller.dashboard', compact('productsCount', 'totalSales'));
+
+        } catch (\Throwable $e) {
+
+            \Log::error('Seller Dashboard error: '.$e->getMessage());
+
+            return back()->with('error', 'Unable to load seller dashboard.');
+        }
     }
 }

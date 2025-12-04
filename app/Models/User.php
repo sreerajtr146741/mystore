@@ -18,7 +18,7 @@ class User extends Authenticatable
         'address',
         'profile_photo',
         'role',
-        'products_count', // if you have this column
+        'products_count',
     ];
 
     protected $hidden = [
@@ -34,9 +34,9 @@ class User extends Authenticatable
 
     // === ROLE CHECKS ===
     public function isAdmin(): bool
-    {
-        return $this->role === 'admin';
-    }
+{
+    return (string)($this->role ?? '') === 'admin';
+}
 
     public function isSeller(): bool
     {
@@ -45,7 +45,7 @@ class User extends Authenticatable
 
     public function isUser(): bool
     {
-        return $this->role === 'user';
+        return $this->role === 'buyer';
     }
 
     // === RELATIONSHIPS ===
@@ -58,4 +58,5 @@ class User extends Authenticatable
     {
         return $this->hasOne(SellerApplication::class);
     }
+    
 }

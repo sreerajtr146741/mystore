@@ -3,98 +3,126 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <title>Edit Product • MyStore</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Edit Product - MyStore</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <style>
-    body { background: #f8f9fa; }
-    .upload-box { border: 3px dashed #ffc107; border-radius: 16px; padding: 40px; text-align: center; background: #fffbeb; transition: all .3s; cursor: pointer;}
-    .upload-box:hover { background:#fff8d1; border-color:#ffb300; }
-    .preview { max-height: 350px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .current-img { max-height: 280px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-    #placeholder { color:#856404; }
+    body{ background:#0b0f1a; color:#e5e7eb; }
+    .card-glass{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:16px; }
+    .form-control, .form-select { background:#0f1626; color:#e5e7eb; border-color:#1f2a3b; }
+    .form-control:focus, .form-select:focus { background:#0f1626; color:#fff; }
+    .thumb{ width:180px; height:auto; border-radius:12px; border:1px solid rgba(255,255,255,.12); }
+    .muted{ color:#9fb1cc; }
   </style>
 </head>
 <body>
-<nav class="navbar navbar-light bg-white shadow-sm"><div class="container">
-  <a class="navbar-brand fw-bold" href="{{ route('products.index') }}">MyStore</a>
-</div></nav>
+<nav class="navbar navbar-dark" style="background:#0b1220;">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url('/dashboard') }}">MyStore</a>
+    <span class="navbar-text text-white-50">Edit Product</span>
+  </div>
+</nav>
 
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <div class="card shadow-lg border-0">
-        <div class="card-body p-5">
-          <h2 class="text-center mb-5 fw-bold text-warning">Edit Product</h2>
+<main class="container py-4">
+  @if(session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+  @endif
 
-          <form action="{{ route('products.update', $product) }}" method="POST" enctype="multipart/form-data">
-            @csrf @method('PUT')
+  <div class="card-glass p-4">
+    <form method="POST" action="{{ route('products.update', $product) }}" enctype="multipart/form-data">
+      @csrf
+      @method('PUT')
 
-            @if($product->image)
-            <div class="text-center mb-5">
-              <p class="text-muted mb-3 fw-bold">Current Photo:</p>
-              <img src="{{ asset('storage/' . $product->image) }}" class="current-img img-fluid" alt="Current Image">
-            </div>
-            @endif
+      <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" class="form-control"
+               value="{{ old('name', $product->name) }}" required>
+        @error('name') <div class="text-danger small">{{ $message }}</div> @enderror
+      </div>
 
-            <div class="mb-4">
-              <label class="form-label fw-bold text-warning">Change Photo (Optional)</label>
-              <div class="upload-box" onclick="document.getElementById('image').click()">
-                <img id="preview" class="preview img-fluid mb-3" style="display:none;" alt="New Preview">
-                <div id="placeholder">
-                  <i class="bi bi-camera-fill display-3 text-warning mb-3"></i>
-                  <p class="mb-2 fw-bold">Click to choose new photo</p>
-                  <small class="text-muted">Leave empty to keep current photo</small>
-                </div>
-                <input type="file" name="image" id="image" accept="image/*" class="d-none">
-              </div>
-              @error('image') <div class="text-danger mt-2 fw-bold">{{ $message }}</div> @enderror
-            </div>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="4">{{ old('description', $product->description) }}</textarea>
+      </div>
 
-            <div class="row g-3">
-              <div class="col-md-8">
-                <input type="text" name="name" class="form-control form-control-lg rounded-pill"
-                       value="{{ old('name', $product->name) }}" placeholder="Product Name" required>
-                @error('name') <small class="text-danger">{{ $message }}</small> @enderror
-              </div>
-              <div class="col-md-4">
-                <input type="number" name="price" class="form-control form-control-lg rounded-pill"
-                       value="{{ old('price', $product->price) }}" placeholder="Price ₹" required>
-                @error('price') <small class="text-danger">{{ $message }}</small> @enderror
-              </div>
-              <div class="col-12">
-                <select name="category" class="form-select form-select-lg rounded-pill" required>
-                  <option value="">Choose Category</option>
-                  @foreach(['Mobile Phones','Laptops','Fashion','Bikes','Fruits','Sports','Furniture','Books','Other'] as $cat)
-                    <option value="{{ $cat }}" {{ old('category', $product->category) == $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="col-12">
-                <textarea name="description" class="form-control rounded-3" rows="4"
-                          placeholder="Product description (optional)">{{ old('description', $product->description) }}</textarea>
-              </div>
-              <div class="col-12 text-center mt-5">
-                <button type="submit" class="btn btn-success btn-lg px-5 py-3 rounded-pill shadow-lg">Update Product</button>
-                <a href="{{ route('products.index') }}" class="btn btn-secondary btn-lg px-5 py-3 rounded-pill ms-2">Cancel</a>
-              </div>
-            </div>
-          </form>
+      <div class="mb-3">
+        <label class="form-label">Price (₹)</label>
+        <input type="number" step="0.01" name="price" class="form-control"
+               value="{{ old('price', $product->price) }}" required>
+      </div>
 
+      <div class="mb-3">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select">
+          <option value="">-- Select --</option>
+          @foreach($categories as $cat)
+            <option value="{{ $cat }}" {{ old('category', $product->category) === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+          @endforeach
+        </select>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Discount Type</label>
+          <select name="discount_type" class="form-select">
+            <option value="">None</option>
+            <option value="percent" {{ old('discount_type', $product->discount_type) === 'percent' ? 'selected' : '' }}>Percent</option>
+            <option value="flat"    {{ old('discount_type', $product->discount_type) === 'flat' ? 'selected' : '' }}>Flat</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Discount Value</label>
+          <input type="number" step="0.01" name="discount_value" class="form-control"
+                 value="{{ old('discount_value', $product->discount_value) }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="is_discount_active" value="1"
+                   {{ old('is_discount_active', $product->is_discount_active) ? 'checked' : '' }}>
+            <label class="form-check-label">Discount Active</label>
+          </div>
         </div>
       </div>
-    </div>
+
+      <div class="mb-3 mt-3">
+        <label class="form-label">Image</label>
+        <input id="imageInput" type="file" name="image" class="form-control" accept="image/*">
+        <div class="row mt-2 g-3">
+          @if($product->image)
+            <div class="col-auto">
+              <div class="muted small">Current</div>
+              <img src="{{ Storage::url($product->image) }}" alt="Current image" class="thumb">
+            </div>
+          @endif
+          <div class="col-auto" id="previewWrap" style="display:none;">
+            <div class="muted small">Preview</div>
+            <img id="previewImg" class="thumb" alt="Preview">
+          </div>
+        </div>
+        @error('image') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+      </div>
+
+      <button class="btn btn-primary">Update Product</button>
+      <a href="{{ url('/dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
   </div>
-</div>
+</main>
 
 <script>
-document.getElementById('image').addEventListener('change', function(e){
-  const f=e.target.files[0], p=document.getElementById('preview'), ph=document.getElementById('placeholder');
-  if(f){ const r=new FileReader(); r.onload=ev=>{p.src=ev.target.result;p.style.display='block';ph.style.display='none';}; r.readAsDataURL(f);}
-  else { p.style.display='none'; ph.style.display='block'; }
-});
+  const input = document.getElementById('imageInput');
+  const wrap  = document.getElementById('previewWrap');
+  const img   = document.getElementById('previewImg');
+
+  input?.addEventListener('change', () => {
+    const file = input.files && input.files[0];
+    if (!file) { wrap.style.display = 'none'; img.src = ''; return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      wrap.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
