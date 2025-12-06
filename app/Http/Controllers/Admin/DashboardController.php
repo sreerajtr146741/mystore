@@ -16,7 +16,7 @@ class DashboardController extends Controller
                 'pending_apps' => \App\Models\SellerApplication::where('status', 'pending')->count(),
             ];
 
-            return view('admin.dashboard', compact('stats'));
+            return view('admin.manage', compact('stats'));
 
         } catch (\Exception $e) {
 

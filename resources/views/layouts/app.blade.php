@@ -4,49 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyStore - {{ auth()->user()->name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- FontAwesome (Keep existing) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Tailwind (Keep for existing compatibility if needed, but might conflict. Prioritizing Bootstrap for Navbar) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .navbar{ position:sticky; top:0; z-index:1020; }
+        /* Fix Tailwind preflight conflicting with Bootstrap */
+        button { background-color: transparent; }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-light">
 
-    <!-- Top Navbar -->
-    <nav class="bg-gradient-to-r from-indigo-600 to-purple-700 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold">MyStore</h1>
-                </div>
+    <!-- Bootstrap Navbar (Copied from Product Page) -->
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ route('products.index') }}">MyStore</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="topNav">
+                <ul class="navbar-nav me-auto"></ul>
 
-                <div class="flex items-center space-x-6">
-                    <!-- Cart Icon -->
-                    <a href="#" class="relative hover:text-yellow-300 transition">
-                        <i class="fas fa-shopping-cart text-2xl"></i>
-                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-                    </a>
+                {{-- Cart --}}
+                <a href="{{ route('cart.index') }}" class="position-relative me-3 text-decoration-none text-dark" aria-label="Cart">
+                    <i class="bi bi-cart fs-4"></i>
+                    @php $cart = session('cart', []); @endphp
+                    @if(!empty($cart))
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ count($cart) }}
+                        </span>
+                    @endif
+                </a>
 
-                    <!-- Profile Dropdown -->
-                    <div class="relative group">
-                        <button class="flex items-center space-x-3 hover:bg-white/10 px-4 py-2 rounded-lg transition">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=6366f1&color=fff&bold=true" 
-                                 alt="Profile" class="w-10 h-10 rounded-full border-2 border-white">
-                            <span class="font-medium">{{ auth()->user()->name }}</span>
-                            <i class="fas fa-chevron-down text-sm"></i>
-                        </button>
+                {{-- Profile Dropdown --}}
+                @auth
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown">
+                            <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center"
+                                 style="width:40px;height:40px;">
+                                {{ strtoupper(mb_substr(auth()->user()->first_name ?? auth()->user()->name ?? 'U', 0, 1)) }}
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="px-3 py-2 small text-muted">{{ auth()->user()->email }}</li>
+                            <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Edit Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ route('orders.index') }}">My Orders</a></li>
+                            <li><hr class="dropdown-divider"></li>
 
-                        <!-- Dropdown Menu -->
-                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                            <a href="{{ route('profile.edit') }}" class="block px-4 py-3 text-gray-700 hover:bg-indigo-50 border-b">
-                                <i class="fas fa-user-edit mr-2"></i> Edit Profile
-                            </a>
-                            <form action="{{ route('logout') }}" method="POST" class="block">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50">
-                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                                </button>
-                            </form>
-                        </div>
+                            <li>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button class="dropdown-item text-danger">Logout</button>
+                                </form>
+                            </li>
+                        </ul>
                     </div>
-                </div>
+                @else
+                    <a href="{{ route('login') }}" class="btn btn-outline-primary me-2">Login</a>
+                    <a href="{{ route('register') }}" class="btn btn-primary">Register</a>
+                @endauth
             </div>
         </div>
     </nav>

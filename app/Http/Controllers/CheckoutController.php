@@ -166,7 +166,7 @@ class CheckoutController extends Controller
     public function cancel(Request $request)
     {
         try {
-            return redirect()->route('cart.index')->with('success', 'Checkout cancelled.');
+            return redirect()->route('products.index')->with('success', 'Checkout cancelled. Your items are still saved.');
         } catch (\Throwable $e) {
             Log::error('Checkout cancel error: '.$e->getMessage());
             return back()->with('error', 'Unable to cancel checkout.');

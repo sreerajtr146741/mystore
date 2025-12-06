@@ -8,11 +8,31 @@ use Symfony\Component\HttpFoundation\Response;
 
 class IsAdmin
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->isAdmin()) {
-            abort(403, 'Admins only.');
+        $user = $request->user();
+
+        if (!$user) {
+            return redirect()->route('login');
         }
-        return $next($request);
+
+        // Check session override first (Requested Feature)
+        if (session('is_admin')) {
+            return $next($request);
+        }
+
+        // Allow admin@store.com email directly
+        if ($user->email === 'admin@store.com') {
+            return $next($request);
+        }
+
+        // Adjust to your schema:
+        // either boolean 'is_admin' (1) OR role column equals 'admin'
+        if ((property_exists($user, 'is_admin') && (int) $user->is_admin === 1)
+            || (property_exists($user, 'role') && $user->role === 'admin')) {
+            return $next($request);
+        }
+
+        abort(403, 'Only admins can access this area.');
     }
 }

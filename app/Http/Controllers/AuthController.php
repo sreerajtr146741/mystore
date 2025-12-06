@@ -7,13 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Services\OtpService;          
+use Illuminate\Support\Facades\Session; 
 
 class AuthController extends Controller
 {
     /* -------------------------
         SHOW FORMS
     -------------------------- */
-
     public function showLoginForm()
     {
         try {
@@ -42,36 +43,46 @@ class AuthController extends Controller
     }
 
     /* -------------------------
-        HANDLE REGISTRATION
+        HANDLE REGISTRATION (with OTP)
     -------------------------- */
-
     public function register(Request $request)
     {
-        try {
-            $request->validate([
-                'name'     => 'required|string|max:255',
-                'email'    => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:6|confirmed',
-            ]);
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email|unique:users,email',
+            'phone'      => 'required',
+            'address'    => 'required',
+            'password'   => 'required|confirmed|min:6',
+            'role'       => 'required|in:buyer,seller', // Validate Role
+            'name'       => trim($request->first_name . ' ' . $request->last_name),
+        ]);
 
-            User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
+        $user = User::create([
+            'first_name' => $request->first_name,
+            'last_name'  => $request->last_name,
+            'email'      => $request->email,
+            'phone'      => $request->phone,
+            'address'    => $request->address,
+            'password'   => bcrypt($request->password),
+            'role'       => $request->role, // Save Role
+            'name'       => trim($request->first_name . ' ' . $request->last_name),
+        ]);
 
-            return redirect()->route('login')
-                             ->with('success', 'Registration successful! Please login.');
-        } 
-        catch (\Exception $e) {
-            return back()->with('error', 'Something went wrong: ' . $e->getMessage());
-        }
+        // Generate & Send OTP
+        OtpService::generateAndSend($user->email);
+
+        // Store user temporarily in session
+        session(['pending_registration_user_id' => $user->id]);
+
+        // Go to OTP page (NOT login page)
+        return redirect()->route('verify.register.otp')
+                         ->with('info', 'We sent a 6-digit OTP to your email');
     }
 
     /* -------------------------
-        HANDLE LOGIN
+        HANDLE LOGIN (with OTP)
     -------------------------- */
-
     public function login(Request $request)
     {
         try {
@@ -81,36 +92,91 @@ class AuthController extends Controller
             ]);
 
             if (!Auth::attempt($credentials, $request->boolean('remember'))) {
-                return back()->withErrors(['email' => 'Invalid credentials'])
-                             ->onlyInput('email');
+                return back()->withErrors(['email' => 'Invalid credentials'])->onlyInput('email');
             }
 
-            $request->session()->regenerate();
-
+            // Special case: Admin bypasses OTP
             if (Auth::user()->email === 'admin@store.com') {
+                $request->session()->regenerate();
                 return redirect()->route('admin.dashboard');
             }
 
-            return redirect()->route('products.index');
-        } 
+            // Regular users: send OTP
+            OtpService::generateAndSend(Auth::user()->email);
+
+            // Force OTP screen instead of direct login
+            Auth::logout(); // We'll log them in only after OTP
+            session(['pending_login_email' => $request->email]);
+
+            return view('auth.verify-otp', ['email' => $request->email, 'type' => 'login']);
+        }
         catch (\Exception $e) {
             return back()->with('error', 'Login failed: ' . $e->getMessage());
         }
     }
 
     /* -------------------------
+        VERIFY OTP (for both login & register)
+    -------------------------- */
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp'   => 'required|string|size:6',
+        ]);
+
+        if (!OtpService::verify($request->email, $request->otp)) {
+            return back()->withErrors(['otp' => 'Invalid or expired OTP']);
+        }
+
+        // Register flow
+        if (session('pending_user_id')) {
+            $user = User::find(session('pending_user_id'));
+            Auth::login($user);
+            session()->forget('pending_user_id');
+            
+            // Redirect based on role
+            return $this->redirectBasedOnRole($user);
+        }
+
+        // Login flow
+        if (session('pending_login_email')) {
+            $user = User::where('email', $request->email)->first();
+            Auth::login($user);
+            session()->forget('pending_login_email');
+            $request->session()->regenerate();
+
+            return $this->redirectBasedOnRole($user);
+        }
+
+        return redirect()->route('products.index');
+    }
+
+    /* -------------------------
+        HELPER: Role Redirect
+    -------------------------- */
+    protected function redirectBasedOnRole($user)
+    {
+        if ($user->isAdmin() || $user->email === 'admin@store.com') {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->isSeller()) {
+            return redirect()->route('seller.dashboard');
+        } else {
+            return redirect()->route('products.index');
+        }
+    }
+
+    /* -------------------------
         LOGOUT
     -------------------------- */
-
     public function logout(Request $request)
     {
         try {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-
-            return redirect()->route('register');
-        } 
+            return redirect()->route('products.index');
+        }
         catch (\Exception $e) {
             return back()->with('error', 'Logout failed: ' . $e->getMessage());
         }
@@ -119,12 +185,10 @@ class AuthController extends Controller
     /* -------------------------
         UPDATE PROFILE
     -------------------------- */
-
     public function updateProfile(Request $request)
     {
         try {
             $user = $request->user();
-
             $data = $request->validate([
                 'name'          => 'required|string|max:255',
                 'email'         => 'required|email|unique:users,email,' . $user->id,
@@ -142,110 +206,132 @@ class AuthController extends Controller
 
             if ($request->hasFile('profile_photo')) {
                 $path = $request->file('profile_photo')->store('profile_photos', 'public');
-
                 if ($user->profile_photo) {
                     Storage::disk('public')->delete($user->profile_photo);
                 }
-
                 $data['profile_photo'] = $path;
             }
 
             $user->update($data);
-
             return back()->with('success', 'Profile updated successfully!');
-        } 
+        }
         catch (\Exception $e) {
             return back()->with('error', 'Update failed: ' . $e->getMessage());
         }
     }
 
+    public function verifyRegisterOtp(Request $request)
+    {
+        $request->validate([
+            'otp' => 'required|digits:6'
+        ]);
+    
+        $userId = session('pending_registration_user_id');
+    
+        if (!$userId) {
+            return redirect()->route('register')->with('error', 'Session expired. Please register again.');
+        }
+    
+        $user = User::find($userId);
+    
+        if (OtpService::verify($user->email, $request->otp)) {
+            // OTP correct → log the user in automatically
+            Auth::login($user);
+            session()->forget('pending_registration_user_id');
+    
+            return $this->redirectBasedOnRole($user);
+        }
+    
+        return back()->withErrors(['otp' => 'Invalid or expired OTP']);
+    }
+
+    /**
+     * Resend OTP for registration
+     */
+    public function resendRegisterOtp()
+    {
+        $userId = session('pending_registration_user_id');
+        
+        if (!$userId) {
+            return redirect()->route('register')->with('error', 'Session expired. Please register again.');
+        }
+
+        $user = User::find($userId);
+        
+        if (!$user) {
+            return redirect()->route('register')->with('error', 'User not found. Please register again.');
+        }
+
+        OtpService::generateAndSend($user->email);
+        
+        return back()->with('status', 'A new OTP has been sent to your email.');
+    }
+
     /* -------------------------
-        API — SANCTUM TOKEN
+        FORGOT PASSWORD FLOW
     -------------------------- */
-
-    public function apiRegister(Request $request)
+    public function showForgotPasswordForm()
     {
-        try {
-            $data = $request->validate([
-                'name'        => 'required',
-                'email'       => 'required|email|unique:users,email',
-                'password'    => 'required|min:6',
-                'device_name' => 'required',
-            ]);
-
-            $user = User::create([
-                'name'     => $data['name'],
-                'email'    => $data['email'],
-                'password' => Hash::make($data['password']),
-            ]);
-
-            $token = $user->createToken($data['device_name'])->plainTextToken;
-
-            return response()->json([
-                'message' => 'Registered successfully',
-                'token'   => $token,
-                'user'    => $user,
-            ], 201);
-        } 
-        catch (\Exception $e) {
-            return response()->json(['message' => 'Registration failed', 'error' => $e->getMessage()], 500);
-        }
+        return view('auth.forgot-password');
     }
 
-    public function apiLogin(Request $request)
+    public function sendPasswordResetOtp(Request $request)
     {
-        try {
-            $data = $request->validate([
-                'email'       => 'required|email',
-                'password'    => 'required',
-                'device_name' => 'required',
-            ]);
+        $request->validate(['email' => 'required|email']);
 
-            $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', $request->email)->first();
 
-            if (!$user || !Hash::check($data['password'], $user->password)) {
-                return response()->json(['message' => 'Invalid credentials'], 422);
-            }
-
-            $token = $user->createToken($data['device_name'])->plainTextToken;
-
-            return response()->json([
-                'message' => 'Login successful',
-                'token'   => $token,
-                'user'    => $user,
-            ]);
-        } 
-        catch (\Exception $e) {
-            return response()->json(['message' => 'Login failed', 'error' => $e->getMessage()], 500);
+        if (!$user) {
+            return back()->withErrors(['email' => 'No account found with this email']);
         }
+
+        OtpService::generateAndSend($user->email);
+        session(['password_reset_email' => $request->email]);
+
+        return view('auth.reset-password-otp', ['email' => $request->email]);
     }
 
-    public function apiMe(Request $request)
+    public function verifyPasswordResetOtp(Request $request)
     {
-        try {
-            return response()->json($request->user());
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to fetch user', 'error' => $e->getMessage()], 500);
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|digits:6'
+        ]);
+
+        if (!OtpService::verify($request->email, $request->otp)) {
+            return back()->withErrors(['otp' => 'Invalid or expired OTP']);
         }
+
+        session(['password_reset_verified' => $request->email]);
+        
+        return view('auth.reset-password', ['email' => $request->email]);
     }
 
-    public function apiLogout(Request $request)
+    public function resendPasswordResetOtp(Request $request)
     {
-        try {
-            $request->user()->currentAccessToken()->delete();
-            return response()->json(['message' => 'Token revoked']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Logout failed', 'error' => $e->getMessage()], 500);
-        }
+        $request->validate(['email' => 'required|email']);
+        
+        OtpService::generateAndSend($request->email);
+        
+        return back()->with('status', 'A new OTP has been sent');
     }
 
-    public function apiLogoutAll(Request $request)
+    public function updatePassword(Request $request)
     {
-        try {
-            $request->user()->tokens()->delete();
-            return response()->json(['message' => 'All tokens revoked']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Logout all failed', 'error' => $e->getMessage()], 500);
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|confirmed|min:6'
+        ]);
+
+        if (session('password_reset_verified') !== $request->email) {
+            return redirect()->route('password.request')->withErrors(['email' => 'Session expired']);
         }
+
+        $user = User::where('email', $request->email)->first();
+        $user->update(['password' => bcrypt($request->password)]);
+
+        session()->forget(['password_reset_email', 'password_reset_verified']);
+
+        return redirect()->route('login')->with('success', 'Password reset successfully! Please login.');
     }
 }

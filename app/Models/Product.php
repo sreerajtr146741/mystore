@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User; // import for relation
+use App\Models\User;
+// ADD:
+use App\Models\Category; // for the category relation
 
 class Product extends Model
 {
@@ -17,19 +19,21 @@ class Product extends Model
         'description',
         'price',
         'category',
-        'image',          // or 'image_path' if that's your column
+        'image',
         'stock',
         'status',
-        'slug',           // <-- missing comma was here
+        'slug',
 
         // discount fields
-        'discount_type',        // 'percent' | 'flat' | null
-        'discount_value',       // numeric
-        'discount_starts_at',   // datetime nullable
-        'discount_ends_at',     // datetime nullable
-        'is_discount_active',   // boolean
-        'is_active',            // boolean (for public listing)
-   
+        'discount_type',
+        'discount_value',
+        'discount_starts_at',
+        'discount_ends_at',
+        'is_discount_active',
+        'is_active',
+
+        // ADD:
+        'category_id', // keep your string 'category' too; this just enables relation
     ];
 
     /**
@@ -48,7 +52,11 @@ class Product extends Model
     /**
      * Accessors to append on array/json
      */
-    protected $appends = ['final_price'];
+    protected $appends = [
+        'final_price',
+        // ADD:
+        'discounted_price', // keep legacy accessor visible in arrays/json
+    ];
 
     /* =========================
        Relationships
@@ -56,6 +64,18 @@ class Product extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // ADD:
+    public function category()
+    {
+        // Uses 'category_id' FK (added above), adjusts automatically if null
+        return $this->belongsTo(Category::class);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(\App\Models\OrderItem::class);
     }
 
     /* =========================
@@ -69,45 +89,56 @@ class Product extends Model
     /* =========================
        Accessors
        ========================= */
-    public function getFinalPriceAttribute(): float
+
+    public function getFinalPriceAttribute()
     {
-        $base = (float) $this->price;
-        $now  = Carbon::now();
+        $price = (float) $this->price;
 
-        $windowOk = true;
+        if (!$this->is_discount_active) {
+            return $price;
+        }
+
+        // Check dates if set
         if ($this->discount_starts_at && $this->discount_ends_at) {
-            $windowOk = $now->between($this->discount_starts_at, $this->discount_ends_at);
-        }
-
-        if (
-            ($this->is_discount_active ?? false) &&
-            $this->discount_type &&
-            (float) $this->discount_value > 0 &&
-            $windowOk
-        ) {
-            return max(0.0, $this->applyDiscount($base, (string)$this->discount_type, (float)$this->discount_value));
-        }
-
-        if (class_exists(\App\Models\Setting::class)) {
-            $gActive = (bool) (int) (\App\Models\Setting::get('discount.global.active', 0));
-            if ($gActive) {
-                $gType  = (string) \App\Models\Setting::get('discount.global.type', 'percent');
-                $gValue = (float)  \App\Models\Setting::get('discount.global.value', 0);
-                $gStart = \App\Models\Setting::get('discount.global.starts_at');
-                $gEnd   = \App\Models\Setting::get('discount.global.ends_at');
-
-                $winOk = true;
-                if ($gStart && $gEnd) {
-                    $winOk = $now->between(Carbon::parse($gStart), Carbon::parse($gEnd));
-                }
-
-                if ($winOk && $gValue > 0) {
-                    return max(0.0, $this->applyDiscount($base, $gType, $gValue));
-                }
+            if (!now()->between($this->discount_starts_at, $this->discount_ends_at)) {
+                return $price;
             }
         }
 
-        return $base;
+        // Apply product-specific discount
+        $val = $this->discount_value ?? 0;
+        $type = $this->discount_type ?? 'fixed';
+
+        return max(0, $this->applyDiscount($price, $type, $val));
+    }
+
+    // ADD:
+    public function getDiscountedPriceAttribute(): float
+    {
+        // Backward-compatible alias that also considers category-level percent discount.
+        // Chooses the lowest price between existing final_price and category discount on base.
+        $base = (float) ($this->price ?? 0);
+        $currentFinal = (float) ($this->final_price ?? $base);
+
+        $catPercent = 0.0;
+        try {
+            if ($this->relationLoaded('category') ? $this->category : $this->category()->first()) {
+                $cat = $this->category;
+                if ($cat && isset($cat->discount_percent)) {
+                    $catPercent = (float) $cat->discount_percent;
+                }
+            }
+        } catch (\Throwable $e) {
+            // If relation lookup fails, ignore and treat as no category discount
+            $catPercent = 0.0;
+        }
+
+        $withCategory = $catPercent > 0
+            ? max(0.0, $this->applyDiscount($base, 'percent', $catPercent))
+            : $base;
+
+        // Return the better (lower) price
+        return (float) min($currentFinal, $withCategory);
     }
 
     /**

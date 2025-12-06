@@ -10,14 +10,22 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
+    /**
+     * Keep ALL previously used fields:
+     * - first_name/last_name (from version 1)
+     * - name, profile_photo, role, products_count (from version 2)
+     */
     protected $fillable = [
+        'first_name',
+        'last_name',
         'name',
         'email',
-        'password',
-        'phone',
         'address',
+        'phone',
+        'password',
         'profile_photo',
         'role',
+        'status',
         'products_count',
     ];
 
@@ -34,9 +42,9 @@ class User extends Authenticatable
 
     // === ROLE CHECKS ===
     public function isAdmin(): bool
-{
-    return (string)($this->role ?? '') === 'admin';
-}
+    {
+        return (string)($this->role ?? '') === 'admin';
+    }
 
     public function isSeller(): bool
     {
@@ -58,5 +66,4 @@ class User extends Authenticatable
     {
         return $this->hasOne(SellerApplication::class);
     }
-    
 }

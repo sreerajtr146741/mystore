@@ -8,102 +8,77 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    /**
-     * Users list for Admin & Seller.
-     * - Seller: read-only
-     * - Admin: can manage users
-     */
     public function index(Request $request)
     {
-        try {
+        $query = User::query();
 
-            $q      = trim($request->get('q', ''));
-            $role   = $request->get('role', '');
-            $status = $request->get('status', '');
-
-            $users = User::query()
-                ->when($q, function($qr) use ($q) {
-                    $qr->where(function($w) use ($q){
-                        $w->where('id', $q)
-                          ->orWhere('name', 'like', "%{$q}%")
-                          ->orWhere('email', 'like', "%{$q}%")
-                          ->orWhere('phone', 'like', "%{$q}%");
-                    });
-                })
-                ->when($role, fn($qr) => $qr->where('role', $role))
-                ->when($status, fn($qr) => $qr->where('status', $status))
-                ->orderByDesc('id')
-                ->paginate(12)
-                ->withQueryString();
-
-            $isAdmin = method_exists($request->user(), 'isAdmin') && $request->user()->isAdmin();
-
-            return view('admin.users.index', compact('users','q','role','status','isAdmin'));
-
-        } catch (\Throwable $e) {
-
-            \Log::error('UserController index error: '.$e->getMessage());
-            return back()->with('error', 'Unable to load users list.');
+        // Search functionality
+        if ($search = $request->get('q')) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
         }
+
+        // Filter by role
+        if ($role = $request->get('role')) {
+            $query->where('role', $role);
+        }
+
+        // Filter by status
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+
+        $users = $query->latest()->paginate(15);
+
+        return view('admin.users.index', compact('users'));
     }
 
-    /**
-     * Admin: change status to active/suspended.
-     */
-    public function updateStatus(Request $request, User $user)
+    public function suspend($id)
     {
-        try {
-
-            $this->authorizeAdmin($request);
-
-            $request->validate([
-                'status' => 'required|in:active,suspended,pending'
-            ]);
-
-            if ($request->user()->id === $user->id && $request->input('status') !== 'active') {
-                return back()->withErrors('You cannot suspend your own account.');
-            }
-
-            $user->status = $request->input('status');
-            $user->save();
-
-            return back()->with('success', "User #{$user->id} status updated to {$user->status}.");
-
-        } catch (\Throwable $e) {
-
-            \Log::error('UserController updateStatus error: '.$e->getMessage());
-            return back()->with('error', 'Unable to update user status.');
+        $user = User::findOrFail($id);
+        
+        if ($user->email === 'admin@store.com') {
+            return back()->with('error', 'Cannot suspend admin account');
         }
+
+        $user->update(['status' => 'suspended']);
+        
+        return back()->with('success', 'User suspended successfully');
     }
 
-    /**
-     * Admin: delete user.
-     */
-    public function destroy(Request $request, User $user)
+    public function unsuspend($id)
     {
-        try {
-
-            $this->authorizeAdmin($request);
-
-            if ($request->user()->id === $user->id) {
-                return back()->withErrors('You cannot delete your own account.');
-            }
-
-            $user->delete();
-
-            return back()->with('success', "User #{$user->id} deleted.");
-
-        } catch (\Throwable $e) {
-
-            \Log::error('UserController destroy error: '.$e->getMessage());
-            return back()->with('error', 'Unable to delete user.');
-        }
+        $user = User::findOrFail($id);
+        $user->update(['status' => 'active']);
+        
+        return back()->with('success', 'User reactivated successfully');
     }
 
-    private function authorizeAdmin(Request $request): void
+    public function block($id)
     {
-        if (!(method_exists($request->user(), 'isAdmin') && $request->user()->isAdmin())) {
-            abort(403, 'Only admin can perform this action.');
+        $user = User::findOrFail($id);
+        
+        if ($user->email === 'admin@store.com') {
+            return back()->with('error', 'Cannot block admin account');
         }
+
+        $user->update(['status' => 'blocked']);
+        
+        return back()->with('success', 'User blocked successfully');
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        
+        if ($user->email === 'admin@store.com') {
+            return back()->with('error', 'Cannot delete admin account');
+        }
+
+        $user->delete();
+        
+        return back()->with('success', 'User deleted successfully');
     }
 }
