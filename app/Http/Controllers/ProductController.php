@@ -31,6 +31,7 @@ class ProductController extends Controller
     {
         try {
             $category = $request->query('category');
+            $search = $request->query('search');
             $query = Product::query();
 
             if (Schema::hasColumn('products', 'is_active')) {
@@ -41,6 +42,13 @@ class ProductController extends Controller
 
             if ($category) {
                 $query->where('category', $category);
+            }
+
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'LIKE', '%' . $search . '%')
+                      ->orWhere('description', 'LIKE', '%' . $search . '%');
+                });
             }
 
             $products = $query->latest()->paginate(12);
