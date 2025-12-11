@@ -70,7 +70,7 @@ class AuthController extends Controller
         ]);
 
         // Generate & Send OTP
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'registration', ['role' => $user->role]);
 
         // Store user temporarily in session
         session(['pending_registration_user_id' => $user->id]);
@@ -102,7 +102,7 @@ class AuthController extends Controller
             }
 
             // Regular users: send OTP
-            OtpService::generateAndSend(Auth::user()->email);
+            OtpService::generateAndSend(Auth::user()->email, 'login');
 
             // Force OTP screen instead of direct login
             Auth::logout(); // We'll log them in only after OTP
@@ -262,7 +262,7 @@ class AuthController extends Controller
             return redirect()->route('register')->with('error', 'User not found. Please register again.');
         }
 
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'registration', ['role' => $user->role]);
         
         return back()->with('status', 'A new OTP has been sent to your email.');
     }
@@ -285,7 +285,7 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'No account found with this email']);
         }
 
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'password_reset');
         session(['password_reset_email' => $request->email]);
 
         return view('auth.reset-password-otp', ['email' => $request->email]);
@@ -311,7 +311,7 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
         
-        OtpService::generateAndSend($request->email);
+        OtpService::generateAndSend($request->email, 'password_reset');
         
         return back()->with('status', 'A new OTP has been sent');
     }

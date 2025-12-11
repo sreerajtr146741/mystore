@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\ProductManageController;
 use App\Http\Controllers\Admin\RevenueController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\MailTestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -181,3 +182,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/set-category-discount', [AdminController::class, 'setCategoryDiscount'])
         ->name('discount.category');
 });
+Route::get('/test-mail', [MailTestController::class, 'send']);

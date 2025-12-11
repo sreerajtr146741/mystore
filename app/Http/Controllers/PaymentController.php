@@ -19,7 +19,12 @@ class PaymentController extends Controller {
         session(['payment_method' => $request->payment_method ?? 'cod']);
         
         // Process payment logic (e.g., Stripe), then send OTP
-        OtpService::generateAndSend(auth()->user()->email);
+        $cart = session('cart', []);
+        $total = 0;
+        foreach($cart as $details) {
+            $total += $details['price'] * $details['qty'];
+        }
+        OtpService::generateAndSend(auth()->user()->email, 'payment', ['amount' => $total]);
         
         // PRG Pattern: Redirect to GET route to avoid 405 on refresh
         return redirect()->route('payment.verify.form');
@@ -30,7 +35,13 @@ class PaymentController extends Controller {
     }
 
     public function resendOtp() {
-        OtpService::generateAndSend(auth()->user()->email);
+        // Recalculate total for context
+        $cart = session('cart', []);
+        $total = 0;
+        foreach($cart as $details) {
+            $total += $details['price'] * $details['qty'];
+        }
+        OtpService::generateAndSend(auth()->user()->email, 'payment', ['amount' => $total]);
         return back()->with('status', 'A new OTP has been sent to your email.');
     }
 
