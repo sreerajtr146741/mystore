@@ -4,46 +4,85 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
+use App\Models\Order;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderStatusUpdated;
 
 class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        try {
+        $status = $request->get('status', 'all');
+        
+        $query = Order::with('user')->latest();
 
-            $hasOrders    = Schema::hasTable('orders');
-            $hasStatusCol = $hasOrders && Schema::hasColumn('orders', 'status');
-
-            // Filters
-            $status = $request->string('status')->toString();
-
-            if ($hasOrders) {
-                $q = DB::table('orders')->select('id','user_id','total','status','created_at')->latest('id');
-
-                if ($status !== '') {
-                    $q->where('status', $status);
-                }
-
-                $orders = $q->paginate(12);
-                $pendingCount = $hasStatusCol ? DB::table('orders')->where('status','pending')->count() : 0;
-            } else {
-                // Demo fallback if you don't have an orders table yet
-                $orders = collect([
-                    (object)['id'=>1001,'user_id'=>4,'total'=>2599,'status'=>'pending','created_at'=>now()],
-                    (object)['id'=>1000,'user_id'=>3,'total'=>4899,'status'=>'paid','created_at'=>now()->subDay()],
-                ]);
-                $pendingCount = $orders->where('status','pending')->count();
-            }
-
-            return view('admin.orders', compact('orders','pendingCount','status','hasOrders'));
-
-        } catch (\Exception $e) {
-
-            \Log::error('OrderController index error: '.$e->getMessage());
-
-            return back()->with('error', 'Unable to load orders. Please try again.');
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $idSearch = str_ireplace('INV-', '', $search);
+            $query->where(function($q) use ($search, $idSearch) {
+                $q->where('id', 'like', "%$idSearch%")
+                  ->orWhereHas('user', function($u) use ($search) {
+                      $u->where('name', 'like', "%$search%")
+                        ->orWhere('email', 'like', "%$search%");
+                  });
+            });
         }
+
+        // Filter by Status (if not 'all')
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $orders = $query->paginate(12)->withQueryString();
+
+        // Calculate Counts
+        $counts = [
+            'all' => Order::count(),
+            'placed' => Order::where('status', 'placed')->count(),
+            'processing' => Order::where('status', 'processing')->count(),
+            'shipped' => Order::where('status', 'shipped')->count(),
+            'delivered' => Order::where('status', 'delivered')->count(),
+            'cancelled' => Order::where('status', 'cancelled')->count(),
+        ];
+
+        return view('admin.orders', compact('orders', 'counts', 'status'));
+    }
+
+    public function show($id)
+    {
+        $order = Order::with(['user', 'items.product'])->findOrFail($id);
+        return view('admin.orders.invoice', compact('order'));
+    }
+
+    public function downloadInvoice($id)
+    {
+        $order = Order::with(['user', 'items.product'])->findOrFail($id);
+        $pdf = Pdf::loadView('admin.orders.invoice', compact('order'));
+        return $pdf->download('invoice-INV-'.$order->id.'.pdf');
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required',
+        ]);
+
+        $order = Order::with('user')->findOrFail($id);
+        $order->status = $request->input('status');
+        $order->save();
+
+        if ($order->user && $order->user->email) {
+            try {
+                Mail::to($order->user->email)->send(new OrderStatusUpdated($order));
+            } catch (\Exception $e) {
+                \Log::error('Mail sending failed: ' . $e->getMessage());
+                // Continue without erroring out the user request completely, but maybe warn?
+                // For now, just logging is safer for UX.
+            }
+        }
+
+        return back()->with('success', 'Order updated to ' . ucfirst($order->status) . ' and email sent.');
     }
 }

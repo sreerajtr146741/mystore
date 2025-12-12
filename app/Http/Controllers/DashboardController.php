@@ -25,6 +25,11 @@ class DashboardController extends Controller
             'blocked_users' => User::where('status', 'blocked')->count(),
             'buyers' => User::where('role', 'buyer')->count(),
             'sellers' => User::where('role', 'seller')->count(),
+            // Order Status Counts
+            'orders_placed' => Order::where('status', 'placed')->count(),
+            'orders_processing' => Order::where('status', 'processing')->count(),
+            'orders_shipped' => Order::where('status', 'shipped')->count(),
+            'orders_delivered' => Order::where('status', 'delivered')->count(),
         ];
 
         // Recent Orders

@@ -59,12 +59,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
 
     // Pay Now → Send OTP
+    // Pay Now
     Route::post('/pay-now', [PaymentController::class, 'payNow'])->name('pay.now');
-    Route::get('/pay-now', fn() => redirect()->route('payment.verify.form')); // Fix for 405 on refresh
-    Route::get('/payment/verify', [PaymentController::class, 'showVerifyForm'])->name('payment.verify.form');
-    Route::post('/payment/otp/resend', [PaymentController::class, 'resendOtp'])->name('payment.otp.resend'); // New Resend Route
-    Route::post('/verify-payment-otp', [PaymentController::class, 'verifyPaymentOtp'])
-        ->name('verify.payment.otp');
 
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::post('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
@@ -142,6 +138,7 @@ Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function (
 });
 
     Route::resource('orders', \App\Http\Controllers\OrderController::class)->only(['index', 'show']);
+    Route::get('/orders/{id}/download', [\App\Http\Controllers\OrderController::class, 'downloadInvoice'])->name('orders.download');
 });
 
 /*
@@ -162,6 +159,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{id}/download', [OrderController::class, 'downloadInvoice'])->name('orders.download');
+    Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.update_status');
 
     // Global Discounts
     Route::get('/discounts/global', [DiscountController::class, 'edit'])->name('discounts.global.edit');

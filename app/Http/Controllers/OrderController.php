@@ -32,4 +32,14 @@ class OrderController extends Controller
             
         return view('orders.show', compact('order'));
     }
+
+    public function downloadInvoice($id)
+    {
+        $order = Order::where('user_id', auth()->id())
+            ->with(['user', 'items.product'])
+            ->findOrFail($id);
+            
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.orders.invoice', compact('order'));
+        return $pdf->download('invoice-INV-'.$order->id.'.pdf');
+    }
 }

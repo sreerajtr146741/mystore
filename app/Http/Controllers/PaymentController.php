@@ -2,7 +2,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\OtpService;
+use App\Models\Order;
+use App\Models\OrderItem;
 
 class PaymentController extends Controller {
     public function __construct() {
@@ -14,82 +15,49 @@ class PaymentController extends Controller {
     }
 
     public function payNow(Request $request) {
-        // Validation handled by frontend primarily as requested, but we should do basics here
+        // Validation
         // Store selected method for the final order creation
         session(['payment_method' => $request->payment_method ?? 'cod']);
         
-        // Process payment logic (e.g., Stripe), then send OTP
         $cart = session('cart', []);
-        $total = 0;
-        foreach($cart as $details) {
-            $total += $details['price'] * $details['qty'];
-        }
-        OtpService::generateAndSend(auth()->user()->email, 'payment', ['amount' => $total]);
         
-        // PRG Pattern: Redirect to GET route to avoid 405 on refresh
-        return redirect()->route('payment.verify.form');
-    }
+        if(empty($cart)) {
+            return redirect()->route('products.index')->with('error', 'Cart is empty');
+        }
 
-    public function showVerifyForm() {
-        return view('payment.verify-otp', ['email' => auth()->user()->email]);
-    }
-
-    public function resendOtp() {
-        // Recalculate total for context
-        $cart = session('cart', []);
         $total = 0;
         foreach($cart as $details) {
             $total += $details['price'] * $details['qty'];
         }
-        OtpService::generateAndSend(auth()->user()->email, 'payment', ['amount' => $total]);
-        return back()->with('status', 'A new OTP has been sent to your email.');
-    }
+        
+        // Create Order Immediately
+        $order = Order::create([
+            'user_id' => auth()->id(),
+            'total'   => $total,
+            'status'  => 'placed',
+            'payment_method' => session('payment_method', 'cod'),
+            'payment_status' => 'paid',
+            'shipping_address' => auth()->user()->address ?? 'Default Address',
+            'delivery_date' => now()->addDays(5),
+        ]);
 
-    public function verifyPaymentOtp(Request $request) {
-        $request->validate(['otp' => 'required|string|size:6']);
-
-        if (OtpService::verify($request->email, $request->otp)) {
-            // Create Order
-            $cart = session('cart', []);
-            $total = 0;
-            foreach($cart as $id => $details) {
-                // Calculate item total using discounted price logic if needed,
-                // but for now relying on what's in cart or re-fetching.
-                // Simplified: usage data from session.
-                $price = $details['price']; 
-                // Ideally, price should be re-validated, but assuming session price is final.
-                $total += $price * $details['qty'];
-            }
-            
-            // Should also check 'checkout_items' if that's different.
-            
-            $order = \App\Models\Order::create([
-                'user_id' => auth()->id(),
-                'total'   => $total,
-                'status'  => 'placed',
-                'payment_method' => session('payment_method', 'cod'), // We need to store method in session during payNow
-                'payment_status' => 'paid',
-                'shipping_address' => auth()->user()->address ?? 'Default Address',
-                'delivery_date' => now()->addDays(5),
+        foreach($cart as $id => $details) {
+            OrderItem::create([
+                'order_id'   => $order->id,
+                'product_id' => $id, // $id is product_id from session key
+                'qty'        => $details['qty'],
+                'price'      => $details['price'],
             ]);
-
-            foreach($cart as $id => $details) {
-                \App\Models\OrderItem::create([
-                    'order_id'   => $order->id,
-                    'product_id' => $id,
-                    'qty'        => $details['qty'],
-                    'price'      => $details['price'],
-                ]);
-            }
-
-            // CRITICAL: User requested NOT to remove products from cart after payment.
-            // session()->forget(['cart', 'checkout_items', 'discount_percent', 'discount_amount', 'coupon_code', 'free_shipping']);
-            
-            // Only clear checkout specific keys? Or keep everything as requested.
-            // Keeping everything.
-
-            return view('payment.success')->with('message', 'Payment successful! Order #' . $order->id . ' placed.');
         }
-        return back()->withErrors(['otp' => 'Invalid OTP']);
+        
+        // Send Email
+        try {
+            \Illuminate\Support\Facades\Mail::to(auth()->user()->email)->send(new \App\Mail\OrderStatusUpdated($order));
+        } catch(\Exception $e) {
+            \Log::error('Order placed email failed: '.$e->getMessage());
+        }
+
+        // Return success view directly
+        return view('payment.success')->with('message', 'Payment successful! Order #' . $order->id . ' placed.');
     }
 }

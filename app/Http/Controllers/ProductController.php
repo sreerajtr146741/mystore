@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -123,6 +124,23 @@ class ProductController extends Controller
 
             if (isset($cart[$product->id])) {
                 $cart[$product->id]['qty'] += $qty;
+                
+                // DB Sync
+                if (Auth::check()) {
+                    \Log::info('Cart Update (Auth): User '.Auth::id().', Product '.$product->id);
+                    $dbCart = Cart::where('user_id', Auth::id())->where('product_id', $product->id)->first();
+                    if ($dbCart) {
+                        $dbCart->increment('qty', $qty);
+                    } else {
+                        Cart::create([
+                            'user_id' => Auth::id(),
+                            'product_id' => $product->id,
+                            'qty' => $qty 
+                        ]);
+                    }
+                } else {
+                     \Log::info('Cart Update (Guest): Not logged in');
+                }
             } else {
                 $cart[$product->id] = [
                     'name'        => $product->name,
@@ -133,6 +151,18 @@ class ProductController extends Controller
                     'category'    => $product->category,
                     'description' => $product->description,
                 ];
+                
+                // DB Sync
+                if (Auth::check()) {
+                    \Log::info('Cart Create (Auth): User '.Auth::id().', Product '.$product->id);
+                     Cart::create([
+                        'user_id' => Auth::id(),
+                        'product_id' => $product->id,
+                        'qty' => $qty
+                    ]);
+                } else {
+                     \Log::info('Cart Create (Guest): Not logged in');
+                }
             }
 
             session(['cart' => $cart]);
@@ -153,9 +183,21 @@ class ProductController extends Controller
             if (isset($cart[$id])) {
                 if ($cart[$id]['qty'] > 1) {
                     $cart[$id]['qty']--;
+                    
+                    // DB Sync
+                    if (Auth::check()) {
+                        Cart::where('user_id', Auth::id())->where('product_id', $id)->decrement('qty');
+                    }
+                    
                     session(['cart' => $cart]);
                 } else {
                     unset($cart[$id]);
+                    
+                    // DB Sync
+                    if (Auth::check()) {
+                        Cart::where('user_id', Auth::id())->where('product_id', $id)->delete();
+                    }
+                    
                     session(['cart' => $cart]);
                 }
             }
@@ -172,6 +214,12 @@ class ProductController extends Controller
             $cart = session('cart', []);
             if (isset($cart[$id])) {
                 unset($cart[$id]);
+                
+                // DB Sync
+                if (Auth::check()) {
+                    Cart::where('user_id', Auth::id())->where('product_id', $id)->delete();
+                }
+
                 session(['cart' => $cart]);
             }
             return back()->with('success', 'Item removed from cart!');

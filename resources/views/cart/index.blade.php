@@ -36,25 +36,29 @@
       </a>
 
       <div class="dropdown">
-        <a href="#" data-bs-toggle="dropdown" class="d-flex align-items-center text-decoration-none">
-          @if(auth()->user()->profile_photo ?? false)
-            <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}" alt="Profile" class="rounded-circle" width="40" height="40" style="object-fit:cover;border:2px solid #0d6efd;">
-          @else
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:40px;height:40px;border:2px solid #0d6efd;">
-              {{ strtoupper(substr(auth()->user()->name,0,1)) }}
-            </div>
-          @endif
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li class="px-3 py-2 small text-muted">{{ auth()->user()->name }}</li>
-          <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Edit Profile</a></li>
-          <li><hr class="dropdown-divider"></li>
-          <li>
-            <form method="POST" action="{{ route('logout') }}">@csrf
-              <button type="submit" class="dropdown-item text-danger">Logout</button>
-            </form>
-          </li>
-        </ul>
+        @auth
+          <a href="#" data-bs-toggle="dropdown" class="d-flex align-items-center text-decoration-none">
+            @if(auth()->user()->profile_photo ?? false)
+              <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}" alt="Profile" class="rounded-circle" width="40" height="40" style="object-fit:cover;border:2px solid #0d6efd;">
+            @else
+              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:40px;height:40px;border:2px solid #0d6efd;">
+                {{ strtoupper(substr(auth()->user()->name,0,1)) }}
+              </div>
+            @endif
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li class="px-3 py-2 small text-muted">{{ auth()->user()->name }}</li>
+            <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Edit Profile</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="POST" action="{{ route('logout') }}">@csrf
+                <button type="submit" class="dropdown-item text-danger">Logout</button>
+              </form>
+            </li>
+          </ul>
+        @else
+          <a href="{{ route('login') }}" class="btn btn-primary rounded-pill px-4">Login</a>
+        @endauth
       </div>
     </div>
   </div>

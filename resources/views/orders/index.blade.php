@@ -38,6 +38,10 @@
                             <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill fw-bold border border-info-subtle">
                                 <i class="fas fa-cog fa-spin me-1"></i> Processing
                             </span>
+                        @elseif($order->status == 'out_for_delivery')
+                            <span class="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-pill fw-bold border border-warning-subtle">
+                                <i class="fas fa-truck-moving me-1"></i> Out for Delivery
+                            </span>
                         @else
                             <span class="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-pill fw-bold border border-warning-subtle">
                                 <i class="fas fa-clock me-1"></i> {{ ucfirst($order->status) }}
@@ -82,9 +86,14 @@
                                 <div class="small text-muted text-uppercase fw-bold">Total Amount</div>
                                 <div class="fs-4 fw-bold text-dark">₹{{ number_format($order->total, 2) }}</div>
                             </div>
-                            <a href="{{ route('orders.show', $order->id) }}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm hover-scale">
-                                View Order <i class="fas fa-arrow-right ms-2"></i>
-                            </a>
+                            <div class="d-flex align-items-center">
+                                <a href="{{ route('orders.download', $order->id) }}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale me-2" title="Download Invoice">
+                                    <i class="fas fa-file-invoice"></i>
+                                </a>
+                                <a href="{{ route('orders.show', $order->id) }}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm hover-scale">
+                                    View Order <i class="fas fa-arrow-right ms-2"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

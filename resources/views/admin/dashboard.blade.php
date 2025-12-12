@@ -43,52 +43,58 @@
     <!-- Statistics Cards -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card stat-card p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small">Total Users</div>
-                        <h3 class="mb-0">{{ number_format($stats['total_users']) }}</h3>
-                        <small class="text-success"><i class="bi bi-arrow-up"></i> Active: {{ $stats['active_users'] }}</small>
-                    </div>
-                    <div class="stat-icon bg-primary bg-opacity-25 text-primary">
-                        <i class="bi bi-people"></i>
+            <a href="{{ route('admin.users') }}" class="text-decoration-none">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Total Users</div>
+                            <h3 class="mb-0">{{ number_format($stats['total_users']) }}</h3>
+                            <small class="text-success"><i class="bi bi-arrow-up"></i> Active: {{ $stats['active_users'] }}</small>
+                        </div>
+                        <div class="stat-icon bg-primary bg-opacity-25 text-primary">
+                            <i class="bi bi-people"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="card stat-card p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small">Total Products</div>
-                        <h3 class="mb-0">{{ number_format($stats['total_products']) }}</h3>
-                        <small class="text-info">In Catalog</small>
-                    </div>
-                    <div class="stat-icon bg-info bg-opacity-25 text-info">
-                        <i class="bi bi-box-seam"></i>
+            <a href="{{ route('products.index') }}" class="text-decoration-none">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Total Products</div>
+                            <h3 class="mb-0">{{ number_format($stats['total_products']) }}</h3>
+                            <small class="text-info">In Catalog</small>
+                        </div>
+                        <div class="stat-icon bg-info bg-opacity-25 text-info">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="card stat-card p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small">Total Orders</div>
-                        <h3 class="mb-0">{{ number_format($stats['total_orders']) }}</h3>
-                        <small class="text-warning">All Time</small>
-                    </div>
-                    <div class="stat-icon bg-warning bg-opacity-25 text-warning">
-                        <i class="bi bi-cart-check"></i>
+            <a href="{{ route('admin.orders') }}" class="text-decoration-none">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Total Orders</div>
+                            <h3 class="mb-0">{{ number_format($stats['total_orders']) }}</h3>
+                            <small class="text-warning">All Time</small>
+                        </div>
+                        <div class="stat-icon bg-warning bg-opacity-25 text-warning">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="card stat-card p-3">
+            <div class="card stat-card p-3 h-100">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <div class="text-muted small">Total Revenue</div>
@@ -103,10 +109,20 @@
         </div>
     </div>
 
-    <!-- User Breakdown -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
+    <!-- Revenue Chart (Full Width) -->
+    <div class="row mb-4">
+        <div class="col-12">
             <div class="card stat-card p-3">
+                <h6 class="text-muted mb-3">Revenue Trend (Last 6 Months)</h6>
+                <canvas id="revenueChart" height="100" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Breakdown & Quick Actions -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card p-3 h-100">
                 <h6 class="text-muted mb-3">User Breakdown</h6>
                 <div class="d-flex justify-content-between mb-2">
                     <span><i class="bi bi-circle-fill text-primary me-2" style="font-size:8px"></i>Buyers</span>
@@ -127,18 +143,8 @@
             </div>
         </div>
 
-        <div class="col-md-8">
-            <div class="card stat-card p-3">
-                <h6 class="text-muted mb-3">Revenue Trend (Last 6 Months)</h6>
-                <canvas id="revenueChart" height="80"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions & Recent Orders -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card stat-card p-3">
+        <div class="col-md-6">
+            <div class="card stat-card p-3 h-100">
                 <h6 class="text-muted mb-3">Quick Actions</h6>
                 <div class="d-grid gap-2">
                     <a href="{{ route('admin.products.manage') }}" class="btn btn-outline-light btn-sm">
@@ -147,45 +153,15 @@
                     <a href="{{ route('admin.users') }}" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-people me-2"></i>Manage Users
                     </a>
-                    <a href="{{ route('admin.orders') }}" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-receipt me-2"></i>View All Orders
+                    <a href="{{ route('admin.orders') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-receipt me-2"></i>All Orders
                     </a>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-8">
-            <div class="card stat-card p-3">
-                <h6 class="text-muted mb-3">Recent Orders</h6>
-                <div class="table-responsive">
-                    <table class="table table-dark table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th>Order ID</th>
-                                <th>Customer</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($recentOrders as $order)
-                                <tr>
-                                    <td>#{{ $order->id }}</td>
-                                    <td>{{ $order->user->name ?? 'N/A' }}</td>
-                                    <td>₹{{ number_format($order->total, 2) }}</td>
-                                    <td><span class="badge bg-success">{{ ucfirst($order->status) }}</span></td>
-                                    <td>{{ $order->created_at->format('M d, Y') }}</td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="5" class="text-center text-muted">No orders yet</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </div>
+
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

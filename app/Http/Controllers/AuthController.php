@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -135,6 +136,9 @@ class AuthController extends Controller
             Auth::login($user);
             session()->forget('pending_user_id');
             
+            // Merge Cart
+            $this->mergeCart($user);
+            
             // Redirect based on role
             return $this->redirectBasedOnRole($user);
         }
@@ -144,7 +148,9 @@ class AuthController extends Controller
             $user = User::where('email', $request->email)->first();
             Auth::login($user);
             session()->forget('pending_login_email');
+            
             $request->session()->regenerate();
+            $this->mergeCart($user);
 
             return $this->redirectBasedOnRole($user);
         }
@@ -236,8 +242,12 @@ class AuthController extends Controller
     
         if (OtpService::verify($user->email, $request->otp)) {
             // OTP correct → log the user in automatically
+            // OTP correct → log the user in automatically
             Auth::login($user);
             session()->forget('pending_registration_user_id');
+            
+            // Merge Cart
+            $this->mergeCart($user);
     
             return $this->redirectBasedOnRole($user);
         }
@@ -333,5 +343,61 @@ class AuthController extends Controller
         session()->forget(['password_reset_email', 'password_reset_verified']);
 
         return redirect()->route('login')->with('success', 'Password reset successfully! Please login.');
+    } // End updatePassword
+
+    /* -------------------------
+        HELPER: Merge Cart (Session -> DB -> Session)
+    -------------------------- */
+    protected function mergeCart($user)
+    {
+        $sessionCart = session('cart', []);
+
+        // 1. Push Session Items to DB
+        foreach ($sessionCart as $id => $details) {
+            $existing = Cart::where('user_id', $user->id)->where('product_id', $id)->first();
+            if ($existing) {
+                $existing->increment('qty', $details['qty']);
+            } else {
+                Cart::create([
+                    'user_id' => $user->id,
+                    'product_id' => $id,
+                    'qty' => $details['qty']
+                ]);
+            }
+        }
+
+        // 2. Pull All Items from DB to Session (Refresh)
+        $dbItems = Cart::where('user_id', $user->id)->with('product')->get();
+        $newCart = [];
+
+        foreach ($dbItems as $item) {
+            if (!$item->product) continue; 
+            
+            $product = $item->product;
+            $price = (float) $product->price;
+
+            if (!empty($product->discount_value) && !empty($product->discount_type)) {
+                if ($product->discount_type === 'percent') {
+                    $discount = $price * ($product->discount_value / 100);
+                } else {
+                    $discount = (float) $product->discount_value;
+                }
+                $finalPrice = round($price - $discount, 2);
+            } else {
+                $finalPrice = $price;
+            }
+
+            $newCart[$product->id] = [
+                'name'        => $product->name,
+                'price'       => $finalPrice,
+                'original_price' => $price,
+                'qty'         => $item->qty,
+                'image'       => $product->image,
+                'category'    => $product->category,
+                'description' => $product->description,
+            ];
+        }
+
+        session(['cart' => $newCart]);
     }
 }

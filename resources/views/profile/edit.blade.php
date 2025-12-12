@@ -114,12 +114,22 @@
             <div class="grid-2">
               <div class="field">
                 <label class="fw-bold"><i class="bi bi-lock me-1 text-primary"></i> New Password</label>
-                <input type="password" name="password" class="form-control glass" placeholder="••••••••">
+                <div class="input-group">
+                    <input type="password" name="password" id="password" class="form-control glass border-end-0" placeholder="••••••••">
+                    <span class="input-group-text glass border-start-0 bg-transparent" style="cursor: pointer;" onclick="togglePassword('password', this)">
+                        <i class="bi bi-eye-slash"></i>
+                    </span>
+                </div>
                 <small class="text-muted">Leave blank to retain your current password.</small>
               </div>
               <div class="field">
                 <label class="fw-bold"><i class="bi bi-lock-fill me-1 text-primary"></i> Confirm New Password</label>
-                <input type="password" name="password_confirmation" class="form-control glass" placeholder="••••••••">
+                <div class="input-group">
+                    <input type="password" name="password_confirmation" id="password_confirmation" class="form-control glass border-end-0" placeholder="••••••••">
+                    <span class="input-group-text glass border-start-0 bg-transparent" style="cursor: pointer;" onclick="togglePassword('password_confirmation', this)">
+                        <i class="bi bi-eye-slash"></i>
+                    </span>
+                </div>
               </div>
             </div>
 
@@ -138,6 +148,20 @@
 </div>
 
 <script>
+function togglePassword(fieldId, iconSpan) {
+    const field = document.getElementById(fieldId);
+    const icon = iconSpan.querySelector('i');
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    }
+}
+
 (function(){
   const input=document.getElementById('photoInput'), preview=document.getElementById('avatarPreview'), thumb=document.getElementById('avatarThumb');
   if(!input) return;
