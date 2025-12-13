@@ -368,6 +368,14 @@ class AuthController extends Controller
 
         // 2. Pull All Items from DB to Session (Refresh)
         $dbItems = Cart::where('user_id', $user->id)->with('product')->get();
+        
+        // Safety: If DB is empty but we had session items, something went wrong with the sync.
+        // In that case, DO NOT wipe the session cart. Keep the session items.
+        if ($dbItems->isEmpty() && !empty($sessionCart)) {
+            \Log::warning('Cart merge: DB empty after push. Keeping session data to prevent data loss.');
+            return;
+        }
+
         $newCart = [];
 
         foreach ($dbItems as $item) {

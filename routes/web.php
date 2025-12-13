@@ -125,7 +125,7 @@ Route::middleware('auth')->group(function () {
     // My Orders (User)
     
 // Seller Routes
-Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function () {
+Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\SellerController::class, 'dashboard'])->name('dashboard');
     Route::get('/products/create', [App\Http\Controllers\SellerController::class, 'create'])->name('products.create');
     Route::post('/products', [App\Http\Controllers\SellerController::class, 'store'])->name('products.store');

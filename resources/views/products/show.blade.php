@@ -108,11 +108,12 @@
         </button>
         <div class="collapse navbar-collapse" id="topNav">
             <ul class="navbar-nav me-auto"></ul>
+            @php $cart = session('cart', []); @endphp
             <a href="{{ route('cart.index') }}" class="position-relative me-3 text-decoration-none text-dark" aria-label="Cart">
                 <i class="bi bi-cart fs-4"></i>
-                @if($cartQty > 0)
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        {{ $cartQty }}
+                @if($cart && count($cart) > 0)
+                    <span class="position-absolute translate-middle badge rounded-pill bg-danger" style="top:0; right:-6px;">
+                        {{ count($cart) }}
                     </span>
                 @endif
             </a>

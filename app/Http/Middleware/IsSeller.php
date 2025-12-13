@@ -17,13 +17,9 @@ class IsSeller
      */
     public function handle(Request $request, Closure $next): Response
     {
-        public function handle($request, Closure $next)
-{
-    if (!auth()->check() || !auth()->user()->isSeller()) {
-        abort(403, 'Access Denied. Sellers Only.');
-    }
-    return $next($request);
-
+        if (!auth()->check() || !auth()->user()->isSeller()) {
+            abort(403, 'Access Denied. Sellers Only.');
+        }
         return $next($request);
     }
 }
