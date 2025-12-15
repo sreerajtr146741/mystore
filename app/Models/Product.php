@@ -67,11 +67,14 @@ class Product extends Model
     }
 
     // ADD:
-    public function category()
+    public function linkedCategory()
     {
-        // Uses 'category_id' FK (added above), adjusts automatically if null
-        return $this->belongsTo(Category::class);
+        // Uses 'category_id' FK, adjusts automatically if null
+        return $this->belongsTo(Category::class, 'category_id');
     }
+
+
+
 
     public function orderItems()
     {
@@ -115,30 +118,42 @@ class Product extends Model
     // ADD:
     public function getDiscountedPriceAttribute(): float
     {
-        // Backward-compatible alias that also considers category-level percent discount.
-        // Chooses the lowest price between existing final_price and category discount on base.
-        $base = (float) ($this->price ?? 0);
-        $currentFinal = (float) ($this->final_price ?? $base);
-
-        $catPercent = 0.0;
-        try {
-            if ($this->relationLoaded('category') ? $this->category : $this->category()->first()) {
-                $cat = $this->category;
-                if ($cat && isset($cat->discount_percent)) {
-                    $catPercent = (float) $cat->discount_percent;
-                }
-            }
-        } catch (\Throwable $e) {
-            // If relation lookup fails, ignore and treat as no category discount
-            $catPercent = 0.0;
+        // 1. PRODUCT-LEVEL DISCOUNT (Highest Priority)
+        // If the product specifically has a discount active, use it.
+        $base = (float) $this->price;
+        if ($this->is_discount_active && ($this->discount_value > 0)) {
+            return (float) $this->final_price;
         }
 
-        $withCategory = $catPercent > 0
-            ? max(0.0, $this->applyDiscount($base, 'percent', $catPercent))
-            : $base;
+        // 2. CATEGORY-LEVEL HIERARCHY (Product > Brand/SubCat > ParentCat)
+        $percent = 0;
+        
+        // Eager load if possible/needed, or just access relation
+        $cat = $this->linkedCategory; 
 
-        // Return the better (lower) price
-        return (float) min($currentFinal, $withCategory);
+        if ($cat) {
+            // A. Check Immediate Category (e.g. BMW)
+            if (!is_null($cat->discount_percent)) {
+                // Check Expiry
+                if (!$cat->discount_expires_at || Carbon::now()->lt($cat->discount_expires_at)) {
+                    $percent = (float) $cat->discount_percent;
+                }
+            } 
+            
+            // B. If no valid discount found from immediate category (inherited or expired), Check Parent
+            if ($percent == 0 && $cat->parent && !is_null($cat->parent->discount_percent)) {
+                 if (!$cat->parent->discount_expires_at || Carbon::now()->lt($cat->parent->discount_expires_at)) {
+                    $percent = (float) $cat->parent->discount_percent;
+                 }
+            }
+        }
+
+        // Apply percent if found > 0
+        if ($percent > 0) {
+            return max(0, $base - ($base * ($percent / 100)));
+        }
+
+        return $base;
     }
 
     /**

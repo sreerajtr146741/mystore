@@ -114,33 +114,14 @@
                             <td class="text-end">
                                 @if($user->email !== 'admin@store.com')
                                     <div class="btn-group btn-group-sm">
-                                        @if($user->status == 'active')
-                                            <form method="POST" action="{{ route('admin.users.suspend', $user->id) }}" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button class="btn btn-warning btn-sm" title="Suspend">
-                                                    <i class="bi bi-pause-circle"></i>
-                                                </button>
-                                            </form>
-                                        @elseif($user->status == 'suspended')
-                                            <form method="POST" action="{{ route('admin.users.unsuspend', $user->id) }}" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button class="btn btn-success btn-sm" title="Reactivate">
-                                                    <i class="bi bi-play-circle"></i>
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                        @if($user->status != 'blocked')
-                                            <form method="POST" action="{{ route('admin.users.block', $user->id) }}" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button class="btn btn-danger btn-sm" title="Block" onclick="return confirm('Block this user?')">
-                                                    <i class="bi bi-x-circle"></i>
-                                                </button>
-                                            </form>
-                                        @endif
+                                        <form method="POST" action="{{ route('admin.users.toggle', $user->id) }}" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="btn {{ $user->status == 'active' ? 'btn-outline-warning' : 'btn-outline-success' }} btn-sm" 
+                                                    title="{{ $user->status == 'active' ? 'Deactivate User' : 'Activate User' }}">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
 
                                         <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" class="d-inline">
                                             @csrf

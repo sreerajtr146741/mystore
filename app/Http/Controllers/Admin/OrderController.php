@@ -75,11 +75,20 @@ class OrderController extends Controller
 
         if ($order->user && $order->user->email) {
             try {
-                Mail::to($order->user->email)->send(new OrderStatusUpdated($order));
+                if ($order->status === 'delivered') {
+                    // Generate PDF for attachment
+                    // Note: We need to load relations if not already loaded, but findOrFail above does it? 
+                    // No, line 72 only loads 'user'. load items.product for invoice view
+                    $order->load(['items.product']);
+                    $pdf = Pdf::loadView('admin.orders.invoice', compact('order'));
+                    $pdfContent = $pdf->output();
+
+                    Mail::to($order->user->email)->send(new \App\Mail\OrderDeliveredInvoice($order, $pdfContent));
+                } else {
+                    Mail::to($order->user->email)->send(new OrderStatusUpdated($order));
+                }
             } catch (\Exception $e) {
                 \Log::error('Mail sending failed: ' . $e->getMessage());
-                // Continue without erroring out the user request completely, but maybe warn?
-                // For now, just logging is safer for UX.
             }
         }
 

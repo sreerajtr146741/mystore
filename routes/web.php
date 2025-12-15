@@ -124,19 +124,7 @@ Route::middleware('auth')->group(function () {
 
     // My Orders (User)
     
-// Seller Routes
-Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\SellerController::class, 'dashboard'])->name('dashboard');
-    Route::get('/products/create', [App\Http\Controllers\SellerController::class, 'create'])->name('products.create');
-    Route::post('/products', [App\Http\Controllers\SellerController::class, 'store'])->name('products.store');
-    Route::get('/products/{id}/edit', [App\Http\Controllers\SellerController::class, 'edit'])->name('products.edit');
-    Route::put('/products/{id}', [App\Http\Controllers\SellerController::class, 'update'])->name('products.update');
-    Route::delete('/products/{id}', [App\Http\Controllers\SellerController::class, 'destroy'])->name('products.destroy');
-    Route::post('/category/discount', [App\Http\Controllers\SellerController::class, 'setCategoryDiscount'])->name('category.discount');
-    Route::get('/profile', [App\Http\Controllers\SellerController::class, 'profile'])->name('profile');
-    Route::put('/profile', [App\Http\Controllers\SellerController::class, 'updateProfile'])->name('profile.update');
-});
-
+    // Orders (User)
     Route::resource('orders', \App\Http\Controllers\OrderController::class)->only(['index', 'show']);
     Route::get('/orders/{id}/download', [\App\Http\Controllers\OrderController::class, 'downloadInvoice'])->name('orders.download');
 });
@@ -152,9 +140,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Users Management
     Route::get('/users', [UserController::class, 'index'])->name('users');
-    Route::patch('/users/{id}/suspend', [UserController::class, 'suspend'])->name('users.suspend');
-    Route::patch('/users/{id}/unsuspend', [UserController::class, 'unsuspend'])->name('users.unsuspend');
-    Route::patch('/users/{id}/block', [UserController::class, 'block'])->name('users.block');
+    Route::get('/users', [UserController::class, 'index'])->name('users');
+    Route::patch('/users/{id}/toggle', [UserController::class, 'toggleStatus'])->name('users.toggle');
+    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
     // Orders
@@ -168,11 +156,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/discounts/global', [DiscountController::class, 'update'])->name('discounts.global.update');
 
     // Products CRUD (admin)
-    Route::get('/products/manage', [ProductManageController::class, 'index'])->name('products.manage');
+    Route::get('/products/manage', function() { return redirect()->route('admin.products.list'); });
+    Route::get('/products', [ProductManageController::class, 'index'])->name('products.list');
     Route::get('/products/create', [ProductManageController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductManageController::class, 'store'])->name('products.store');
     Route::get('/products/{product}/edit', [ProductManageController::class, 'edit'])->name('products.edit');
     Route::put('/products/{product}', [ProductManageController::class, 'update'])->name('products.update');
+    Route::patch('/products/{product}/toggle', [ProductManageController::class, 'toggleStatus'])->name('products.toggle');
     Route::delete('/products/{product}', [ProductManageController::class, 'destroy'])->name('products.destroy');
 
     // Revenue

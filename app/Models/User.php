@@ -26,7 +26,9 @@ class User extends Authenticatable
         'profile_photo',
         'role',
         'status',
+        'status',
         'products_count',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -38,14 +40,21 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'role' => 'string',
+        'last_login_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     // === ROLE CHECKS ===
     public function isAdmin(): bool
     {
-        return (string)($this->role ?? '') === 'admin';
+        // MERGE: Allow both 'admin' and 'seller' (legacy) to access admin panel
+        return (string)($this->role ?? '') === 'admin' || (string)($this->role ?? '') === 'seller';
     }
 
+    /**
+     * @deprecated Seller role is merged into Admin. Use isAdmin() instead.
+     */
     public function isSeller(): bool
     {
         return $this->role === 'seller';

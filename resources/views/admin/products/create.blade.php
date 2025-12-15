@@ -104,7 +104,6 @@
       <span class="badge bg-light text-dark fw-semibold">Admin</span>
       <h1 class="h4 mb-0">Add Product</h1>
     </div>
-    <a href="{{ route('admin.products.manage') }}" class="btn btn-light btn-sm fw-semibold">Back to Manage</a>
   </div>
 
   @if($errors->any())
@@ -115,6 +114,12 @@
           <li>{{ $err }}</li>
         @endforeach
       </ul>
+    </div>
+  @endif
+
+  @if(session('error'))
+    <div class="alert alert-danger card-styled p-3">
+      <strong>Error:</strong> {{ session('error') }}
     </div>
   @endif
 
@@ -164,20 +169,24 @@
         <div class="row g-3">
           <div class="col-md-7">
             <label class="form-label">Category</label>
-            <select name="category" class="form-select">
-              <option value="" {{ old('category') ? '' : 'selected' }}>Select category</option>
-              @foreach($cats as $cat)
-                <option value="{{ $cat }}" {{ old('category') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
-              @endforeach
+            <select name="category_id" class="form-select">
+              <option value="" {{ old('category_id') ? '' : 'selected' }}>Select category</option>
+              @if(isset($allCategories))
+                  @foreach($allCategories as $parent)
+                    <option value="{{ $parent->id }}" class="fw-bold" {{ old('category_id') == $parent->id ? 'selected' : '' }}>{{ $parent->name }} (All)</option>
+                    @foreach($parent->children as $child)
+                        <option value="{{ $child->id }}" {{ old('category_id') == $child->id ? 'selected' : '' }}>→ {{ $child->name }}</option>
+                    @endforeach
+                  @endforeach
+              @endif
             </select>
-            <div class="form-text">Pick a category. You can add more categories later.</div>
+            <div class="form-text">Select a parent or sub-category.</div>
           </div>
 
           <div class="col-md-5">
             <label class="form-label">Status <span class="text-danger">*</span></label>
             <select name="status" class="form-select" required>
-              <option value="" disabled {{ old('status') ? '' : 'selected' }}>Select status</option>
-              <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
+              <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Active</option>
               <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Draft</option>
             </select>
           </div>
@@ -314,7 +323,7 @@
     <div class="divider"></div>
 
     <div class="d-flex flex-wrap gap-2 justify-content-end">
-      <a href="{{ route('admin.products.manage') }}" class="btn btn-outline-secondary btn-lg-rounded">Cancel</a>
+      <a href="{{ route('admin.products.list') }}" class="btn btn-outline-secondary btn-lg-rounded">Cancel</a>
       <button type="submit" class="btn btn-success btn-lg-rounded">Create Product</button>
     </div>
   </form>
@@ -550,6 +559,14 @@
     if (window.oldCoupons && Array.isArray(window.oldCoupons)) {
       window.oldCoupons.forEach(c => addCouponRow(c));
     }
+    // Auto-dismiss alerts
+    setTimeout(() => {
+      document.querySelectorAll('.alert').forEach(el => {
+        el.style.transition = 'opacity 0.5s ease';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+      });
+    }, 5000);
   })();
 </script>
 </body>

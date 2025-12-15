@@ -130,8 +130,7 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li class="px-3 py-2 small text-muted">{{ auth()->user()->email }}</li>
                         <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Edit Profile</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger fw-bold" href="{{ route('admin.login.form') }}">Admin Login</a></li>
+                        <li><a class="dropdown-item" href="{{ route('orders.index') }}">My Orders</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">@csrf

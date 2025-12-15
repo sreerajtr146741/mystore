@@ -19,7 +19,6 @@ class ProductManageController extends Controller
 
             $this->authorizeView($request);
 
-            $q         = trim($request->get('q', ''));
             $status    = $request->get('status', '');
             $category  = $request->get('category', '');
             $added     = $request->get('added', '');
@@ -33,29 +32,35 @@ class ProductManageController extends Controller
 
             $products = Product::query()
                 ->with('user:id,name')
-                ->when($q, function ($qr) use ($q) {
-                    $qr->where(function ($w) use ($q) {
-                        $w->where('id', $q)
-                          ->orWhere('name', 'like', "%{$q}%")
-                          ->orWhere('category', 'like', "%{$q}%");
-                    });
-                })
                 ->when($status !== '' && $hasStatus, fn($qr) => $qr->where('status', $status))
-                ->when($category !== '', fn($qr) => $qr->where('category', $category))
+                ->when($category !== '', function($qr) use ($category) {
+                   $qr->where(function($sub) use ($category){
+                       $sub->where('category', $category)
+                           ->orWhereHas('linkedCategory', function($rel) use ($category){
+                              $rel->where('name', $category);
+                           });
+                   });
+                })
                 ->when($fromDt, fn($qr) => $qr->where('created_at', '>=', $fromDt->copy()->timezone('UTC')))
                 ->when($toDt,   fn($qr) => $qr->where('created_at', '<',  $toDt->copy()->addDay()->startOfDay()->timezone('UTC')))
                 ->orderByDesc('id')
                 ->paginate(12)
                 ->withQueryString();
 
-            $categories = Product::query()
+            // Legacy string categories
+            $stringCats = Product::query()
                 ->select('category')
                 ->whereNotNull('category')
                 ->where('category', '!=', '')
                 ->distinct()
-                ->orderBy('category')
                 ->pluck('category')
                 ->all();
+
+            // New Hierarchical categories
+            $modelCats = \App\Models\Category::pluck('name')->all();
+            
+            // Merge and Unique
+            $categories = collect($stringCats)->merge($modelCats)->unique()->sort()->values()->all();
 
             $todayStart = Carbon::now($tz)->startOfDay();
             $weekStart  = Carbon::now($tz)->startOfWeek();
@@ -83,27 +88,28 @@ class ProductManageController extends Controller
                                     ])->count(),
             ];
 
+            $allCategories = \App\Models\Category::with('children')->whereNull('parent_id')->get();
+
             return view('admin.products.manage', compact(
-                'products', 'q', 'status', 'category', 'categories',
+                'products', 'q', 'status', 'category', 'categories', 'allCategories',
                 'added', 'addedFrom', 'addedTo', 'counts'
             ));
 
         } catch (\Exception $e) {
 
             \Log::error('ProductManage index error: '.$e->getMessage());
-            return back()->with('error', 'Unable to load products.');
+            return back()->with('error', 'Error loading products: ' . $e->getMessage());
         }
     }
 
     public function create()
     {
         try {
-
             $product = new Product();
-            return view('admin.products.create', compact('product'));
+            $allCategories = \App\Models\Category::with('children')->whereNull('parent_id')->get();
+            return view('admin.products.create', compact('product', 'allCategories'));
 
         } catch (\Exception $e) {
-
             \Log::error('Product create error: '.$e->getMessage());
             return back()->with('error', 'Unable to open create page.');
         }
@@ -111,22 +117,28 @@ class ProductManageController extends Controller
 
     public function store(Request $request)
     {
+        $rules = [
+            'name'        => ['required','string','max:255'],
+            'price'       => ['required','numeric','min:0'],
+            'stock'       => ['required','integer','min:0'],
+            'description' => ['nullable','string'],
+            'category_id' => ['nullable','exists:categories,id'],
+            'category'    => ['nullable','string','max:100'],
+            'image'       => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'status'      => ['required', \Illuminate\Validation\Rule::in(['active','draft'])],
+        ];
+
+        $data = $request->validate($rules);
+
         try {
 
-            $rules = [
-                'name'        => ['required','string','max:255', \Illuminate\Validation\Rule::unique('products','name')],
-                'price'       => ['required','numeric','min:0'],
-                'stock'       => ['required','integer','min:0'],
-                'description' => ['nullable','string'],
-                'category'    => ['nullable','string','max:100'],
-                'image'       => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
-            ];
+            // Handle status -> is_active mapping
+            $data['is_active'] = ($data['status'] === 'active');
 
-            if (Schema::hasColumn('products', 'status')) {
-                $rules['status'] = ['required', \Illuminate\Validation\Rule::in(['active','draft'])];
+            // If DB does not have 'status' column, remove it from data to avoid SQL error
+            if (!Schema::hasColumn('products', 'status')) {
+                unset($data['status']);
             }
-
-            $data = $request->validate($rules);
 
             if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('products', 'public');
@@ -134,30 +146,41 @@ class ProductManageController extends Controller
 
             $data['user_id'] = auth()->id();
 
+            // Link to Category model
+            // Prioritize ID if sent, otherwise find/create by name
+            if (!empty($data['category_id'])) {
+                // ID already valid via validation
+                $data['category_id'] = $data['category_id'];
+                // Optionally fill 'category' string for backward compat if column exists
+                $cat = \App\Models\Category::find($data['category_id']);
+                if ($cat) $data['category'] = $cat->name; 
+            } elseif (!empty($data['category'])) {
+                $cat = \App\Models\Category::firstOrCreate(['name' => $data['category']]);
+                $data['category_id'] = $cat->id;
+            }
+
             if (Schema::hasColumn('products', 'slug')) {
-                $data['slug'] = Str::slug($data['name']).'-'.Str::random(6);
+                // Ensure unique slug even if names are duplicate
+                $data['slug'] = Str::slug($data['name']).'-'.Str::random(10);
             }
 
             Product::create($data);
 
-            return redirect()->route('admin.products.manage')
+            return redirect()->route('admin.products.list')
                              ->with('success', 'Product created.');
 
         } catch (\Exception $e) {
-
             \Log::error('Product store error: '.$e->getMessage());
-            return back()->with('error', 'Unable to create product.');
+            return back()->with('error', 'Unable to create product: ' . $e->getMessage());
         }
     }
 
     public function edit(Product $product)
     {
         try {
-
-            return view('admin.products.edit', compact('product'));
-
+            $allCategories = \App\Models\Category::with('children')->whereNull('parent_id')->get();
+            return view('admin.products.edit', compact('product', 'allCategories'));
         } catch (\Exception $e) {
-
             \Log::error('Product edit error: '.$e->getMessage());
             return back()->with('error', 'Unable to open edit page.');
         }
@@ -168,7 +191,7 @@ class ProductManageController extends Controller
         try {
 
             $data = $request->validate([
-                'name'        => ['required','string','max:255', Rule::unique('products','name')->ignore($product->id)],
+                'name'        => ['required','string','max:255'],
                 'price'       => ['required','numeric','min:0'],
                 'stock'       => ['required','integer','min:0'],
                 'description' => ['nullable','string'],
@@ -181,12 +204,18 @@ class ProductManageController extends Controller
             }
 
             if ($product->name !== $data['name'] && Schema::hasColumn('products', 'slug')) {
-                $data['slug'] = Str::slug($data['name']).'-'.Str::random(6);
+                 $data['slug'] = Str::slug($data['name']).'-'.Str::random(10);
+            }
+
+            // Link to Category model
+            if (!empty($data['category'])) {
+                $cat = \App\Models\Category::firstOrCreate(['name' => $data['category']]);
+                $data['category_id'] = $cat->id;
             }
 
             $product->update($data);
 
-            return redirect()->route('admin.products.manage')
+            return redirect()->route('admin.products.list')
                              ->with('success', 'Product updated.');
 
         } catch (\Exception $e) {
@@ -202,13 +231,37 @@ class ProductManageController extends Controller
 
             $product->delete();
 
-            return redirect()->route('admin.products.manage')
+            return redirect()->route('admin.products.list')
                              ->with('success', 'Product deleted.');
 
         } catch (\Exception $e) {
 
             \Log::error('Product delete error: '.$e->getMessage());
             return back()->with('error', 'Unable to delete product.');
+        }
+    }
+
+    /* ---------- NEW: Toggle Status ---------- */
+    public function toggleStatus(Product $product)
+    {
+        try {
+            // Toggle boolean
+            $newState = !$product->is_active;
+            $product->is_active = $newState;
+
+            // Sync string status if exists
+            if (Schema::hasColumn('products', 'status')) {
+                $product->status = $newState ? 'active' : 'draft';
+            }
+
+            $product->save();
+
+            $msg = $newState ? 'Product Activated.' : 'Product Deactivated.';
+            return back()->with('success', $msg);
+
+        } catch (\Exception $e) {
+            \Log::error('Product toggle error: '.$e->getMessage());
+            return back()->with('error', 'Unable to change status.');
         }
     }
 

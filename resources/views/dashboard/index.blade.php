@@ -356,7 +356,7 @@
         <a href="{{ route('admin.users') }}" class="btn btn-cyan btn-3d text-white px-4 px-md-5 py-4 rounded-pill">
           <i class="bi bi-people-fill fs-3"></i><br>Users List
         </a>
-        <a href="{{ route('admin.products.manage') }}" class="btn btn-indigo btn-3d text-white px-4 px-md-5 py-4 rounded-pill">
+        <a href="{{ route('admin.products.list') }}" class="btn btn-indigo btn-3d text-white px-4 px-md-5 py-4 rounded-pill">
           <i class="bi bi-grid-3x3-gap-fill fs-3"></i><br>Manage Products
         </a>
         <a href="{{ route('admin.revenue') }}" class="btn btn-warning btn-3d text-dark px-4 px-md-5 py-4 rounded-pill">
@@ -412,7 +412,7 @@
     {label:'Pending Orders',     icon:'receipt',          link:'#',                                        tags:['orders','pending','kpi']},
     {label:"Today's Revenue",    icon:'currency-rupee',   link:'#',                                        tags:['revenue','sales','money','kpi']},
 
-    {label:'Manage Products',    icon:'grid-3x3-gap-fill', link:'{{ route('admin.products.manage') }}',     tags:['manage','crud','products']},
+    {label:'Manage Products',    icon:'grid-3x3-gap-fill', link:'{{ route('admin.products.list') }}',     tags:['manage','crud','products']},
     {label:'Users List',         icon:'people',            link:'{{ route('admin.users') }}',               tags:['users','list','admin']},
 
     {label:'Storewide Discount', icon:'tags',              link:'{{ route('admin.discounts.global.edit') }}',tags:['discount','offer','sale']},

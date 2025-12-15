@@ -66,7 +66,7 @@
     <table class="table table-dark table-striped align-middle">
       <thead>
         <tr>
-          <th>#</th><th>Name</th><th>Price</th><th>Stock</th><th>Seller</th><th class="text-end">Actions</th>
+          <th>#</th><th>Status</th><th>Name</th><th>Price</th><th>Stock</th><th>Seller</th><th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -87,6 +87,13 @@
         @endphp
         <tr>
           <td>{{ $p->id }}</td>
+          <td>
+              @if($p->is_active || $p->status === 'active')
+                  <span class="badge bg-success">Active</span>
+              @else
+                  <span class="badge bg-secondary">Inactive</span>
+              @endif
+          </td>
           <td>{{ $p->name }}</td>
           <td>
             @if($final < $base)
@@ -106,7 +113,15 @@
           <td>{{ $p->stock }}</td>
           <td>{{ $p->user->name ?? '-' }}</td>
           <td class="text-end">
-            <form class="d-inline" method="POST" action="{{ route('seller.products.destroy', $p->id) }}">
+            <form class="d-inline" method="POST" action="{{ route('admin.products.toggle', $p->id) }}">
+              @csrf @method('PATCH')
+              <button class="btn btn-sm {{ ($p->is_active || $p->status === 'active') ? 'btn-outline-warning' : 'btn-outline-success' }}"
+                      title="Toggle Status">
+                <i class="bi bi-power"></i>
+              </button>
+            </form>
+
+            <form class="d-inline" method="POST" action="{{ route('admin.products.destroy', $p->id) }}">
               @csrf @method('DELETE')
               <button class="btn btn-sm btn-outline-danger"
                       onclick="return confirm('Delete product?')">
@@ -121,6 +136,7 @@
                data-name="{{ $p->name }}"
                data-price="{{ $p->price }}"
                data-stock="{{ $p->stock }}"
+               data-status="{{ $p->status }}"
                data-discount_type="{{ $p->discount_type }}"
                data-discount_value="{{ $p->discount_value }}"
                data-discount_starts="{{ optional($p->discount_starts_at)->format('Y-m-d\TH:i') }}"
@@ -147,7 +163,7 @@
 {{-- Create Modal --}}
 <div class="modal fade" id="createProductModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" method="POST" action="{{ route('seller.products.store') }}">
+    <form class="modal-content" method="POST" action="{{ route('admin.products.store') }}">
       @csrf
       <div class="modal-header">
         <h5 class="modal-title">Add Product</h5>
@@ -157,6 +173,13 @@
         <div class="mb-3">
           <label class="form-label">Name</label>
           <input name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select" required>
+            <option value="active" selected>Active</option>
+            <option value="draft">Inactive (Draft)</option>
+          </select>
         </div>
         <div class="mb-3">
           <label class="form-label">Price (₹)</label>
@@ -217,6 +240,13 @@
         <div class="mb-3">
           <label class="form-label">Name</label>
           <input id="edit-name" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Status</label>
+          <select id="edit-status" name="status" class="form-select" required>
+            <option value="active">Active</option>
+            <option value="draft">Inactive (Draft)</option>
+          </select>
         </div>
         <div class="mb-3">
           <label class="form-label">Price (₹)</label>
@@ -280,7 +310,28 @@
     document.getElementById('edit-name').value  = b.dataset.name || '';
     document.getElementById('edit-price').value = b.dataset.price || '';
     document.getElementById('edit-stock').value = b.dataset.stock || '';
-
+    
+    // status
+    const statusSelect = document.getElementById('edit-status');
+    if(statusSelect) {
+        statusSelect.value = b.dataset.status || 'active';
+    }
+    
+    // status - logic to select
+    // check both is_active bool and status string
+    const isActive = (b.dataset.discount_active_product === '1' || b.dataset.status === 'active'); // wait, discount_active is for discount. need logic for status.
+    // The previous code didn't pass status in dataset. I need to update the button attributes too!
+    
+    // fallback or assume status passed in specific data attribute? 
+    // I need to add data-status to the edit button.
+    
+    // Let's assume I fix the button attributes in a separate call or rely on what's available?
+    // The previous edit button didn't have data-status. CHECK Step 396 line 134-144. It DOES NOT have data-status.
+    
+    // I MUST UPDATE THE EDIT BUTTON ATTRIBUTES TOO.
+    
+    // For now, let's fix the route logic first.
+    
     // discount fields
     document.getElementById('edit-discount-type').value   = b.dataset.discount_type ?? '';
     document.getElementById('edit-discount-value').value  = b.dataset.discount_value ?? '';
@@ -288,9 +339,9 @@
     document.getElementById('edit-discount-ends').value   = b.dataset.discount_ends ?? '';
     document.getElementById('discActiveEdit').checked     = (b.dataset.discount_active === '1');
 
-    // Set action to seller update route
+    // Set action to admin update route
     const form = document.getElementById('editProductForm');
-    form.action = `{{ url('seller/products') }}/${b.dataset.id}`;
+    form.action = `{{ url('admin/products') }}/${b.dataset.id}`;
   });
 })();
 </script>

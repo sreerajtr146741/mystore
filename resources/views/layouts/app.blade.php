@@ -80,5 +80,21 @@
 
         @yield('content')
     </main>
+    <script>
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                let alerts = document.querySelectorAll('.alert, .bg-green-100'); // Bootstrap .alert or Tailwind .bg-green-100
+                alerts.forEach(function(alert) {
+                    // Fade out effect
+                    alert.style.transition = "opacity 0.5s ease";
+                    alert.style.opacity = "0";
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 500); // Wait for transition to finish
+                });
+            }, 5000); // 5 seconds delay
+        });
+    </script>
 </body>
 </html>

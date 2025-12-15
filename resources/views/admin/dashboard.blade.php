@@ -129,16 +129,8 @@
                     <strong>{{ $stats['buyers'] }}</strong>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span><i class="bi bi-circle-fill text-info me-2" style="font-size:8px"></i>Sellers</span>
-                    <strong>{{ $stats['sellers'] }}</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
                     <span><i class="bi bi-circle-fill text-warning me-2" style="font-size:8px"></i>Suspended</span>
                     <strong>{{ $stats['suspended_users'] }}</strong>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span><i class="bi bi-circle-fill text-danger me-2" style="font-size:8px"></i>Blocked</span>
-                    <strong>{{ $stats['blocked_users'] }}</strong>
                 </div>
             </div>
         </div>
@@ -147,7 +139,7 @@
             <div class="card stat-card p-3 h-100">
                 <h6 class="text-muted mb-3">Quick Actions</h6>
                 <div class="d-grid gap-2">
-                    <a href="{{ route('admin.products.manage') }}" class="btn btn-outline-light btn-sm">
+                    <a href="{{ route('admin.products.list') }}" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-box me-2"></i>Manage Products
                     </a>
                     <a href="{{ route('admin.users') }}" class="btn btn-outline-light btn-sm">

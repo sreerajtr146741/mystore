@@ -84,7 +84,7 @@
   <div class="container d-flex justify-content-between align-items-center">
     <a class="navbar-brand fw-bold" href="{{ url('/dashboard') }}">MyStore</a>
     <div class="d-flex gap-2">
-      <a href="{{ url('/admin/products/manage') }}" class="btn btn-outline-light btn-sm">
+      <a href="{{ route('admin.products.list') }}" class="btn btn-outline-light btn-sm">
         <i class="bi bi-arrow-left"></i> Back
       </a>
       <form action="{{ route('logout') }}" method="POST" class="m-0">
@@ -292,7 +292,7 @@
 
       <div class="d-flex gap-2 mt-4">
         <button class="btn-save" type="submit">Save Changes</button>
-        <a href="{{ route('admin.products.manage') }}" class="btn btn-outline-light">Cancel</a>
+        <a href="{{ route('admin.products.list') }}" class="btn btn-outline-light">Cancel</a>
       </div>
     </form>
   </div>
@@ -490,6 +490,15 @@
     if (row) row.remove();
   });
   form.addEventListener('submit', serializeCoupons);
+
+  // Auto-dismiss alerts
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(el => {
+      el.style.transition = 'opacity 0.5s ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 500);
+    });
+  }, 5000);
 })();
 </script>
 </body>

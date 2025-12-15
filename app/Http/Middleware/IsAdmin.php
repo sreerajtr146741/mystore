@@ -16,8 +16,8 @@ class IsAdmin
             return redirect()->route('login');
         }
 
-        // Check session override first (Requested Feature)
-        if (session('is_admin')) {
+        // Check Model Role
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
             return $next($request);
         }
 

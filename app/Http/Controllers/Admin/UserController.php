@@ -35,38 +35,24 @@ class UserController extends Controller
         return view('admin.users.index', compact('users'));
     }
 
-    public function suspend($id)
+    public function toggleStatus($id)
     {
         $user = User::findOrFail($id);
         
         if ($user->email === 'admin@store.com') {
-            return back()->with('error', 'Cannot suspend admin account');
+            return back()->with('error', 'Cannot change status of admin account');
         }
 
-        $user->update(['status' => 'suspended']);
-        
-        return back()->with('success', 'User suspended successfully');
-    }
-
-    public function unsuspend($id)
-    {
-        $user = User::findOrFail($id);
-        $user->update(['status' => 'active']);
-        
-        return back()->with('success', 'User reactivated successfully');
-    }
-
-    public function block($id)
-    {
-        $user = User::findOrFail($id);
-        
-        if ($user->email === 'admin@store.com') {
-            return back()->with('error', 'Cannot block admin account');
+        // Toggle logic: If active, suspend. If suspended/blocked, activate.
+        if ($user->status === 'active') {
+            $user->update(['status' => 'suspended']);
+            $msg = 'User deactivated (suspended) successfully';
+        } else {
+            $user->update(['status' => 'active']);
+            $msg = 'User activated successfully';
         }
-
-        $user->update(['status' => 'blocked']);
         
-        return back()->with('success', 'User blocked successfully');
+        return back()->with('success', $msg);
     }
 
     public function destroy($id)

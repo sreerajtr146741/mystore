@@ -53,9 +53,9 @@ class AuthController extends Controller
             'last_name'  => 'required|string|max:255',
             'email'      => 'required|email|unique:users,email',
             'phone'      => 'required',
-            'address'    => 'required',
+            // 'address' => 'required', // Removed
             'password'   => 'required|confirmed|min:6',
-            'role'       => 'required|in:buyer,seller', // Validate Role
+            // 'role'       => 'required|in:buyer,seller',
             'name'       => trim($request->first_name . ' ' . $request->last_name),
         ]);
 
@@ -64,9 +64,9 @@ class AuthController extends Controller
             'last_name'  => $request->last_name,
             'email'      => $request->email,
             'phone'      => $request->phone,
-            'address'    => $request->address,
+            'address'    => null, // Set to null as it's no longer in form
             'password'   => bcrypt($request->password),
-            'role'       => $request->role, // Save Role
+            'role'       => 'buyer', // Default to buyer
             'name'       => trim($request->first_name . ' ' . $request->last_name),
         ]);
 
@@ -92,21 +92,38 @@ class AuthController extends Controller
                 'password' => 'required'
             ]);
 
+            // Perform login attempt
             if (!Auth::attempt($credentials, $request->boolean('remember'))) {
-                return back()->withErrors(['email' => 'Invalid credentials'])->onlyInput('email');
+                 return back()->withErrors(['email' => 'Invalid credentials'])->onlyInput('email');
             }
 
-            // Special case: Admin bypasses OTP
-            if (Auth::user()->email === 'admin@store.com') {
+            $user = Auth::user();
+
+            // Special case: Admin bypasses OTP (redundant if using new AdminController but harmless)
+            if ($user->email === 'admin@store.com') {
                 $request->session()->regenerate();
+                // Update login time
+                 $user->update(['last_login_at' => now()]);
                 return redirect()->route('admin.dashboard');
             }
+            
+            
+            // Inactivity Check Logic
+            // Use last_login_at if available, else created_at. 
+            // If both are missing (unlikely), assume active.
+            $lastActive = $user->last_login_at ?? $user->created_at;
+            
+            // If active within last 2 months (or date is null), SKIP OTP
+            if (!$lastActive || $lastActive->gt(now()->subMonths(2))) {
+                $request->session()->regenerate();
+                $user->update(['last_login_at' => now()]);
+                return redirect()->intended(route('products.index')); 
+            }
 
-            // Regular users: send OTP
-            OtpService::generateAndSend(Auth::user()->email, 'login');
+            // Inactive > 2 months -> Require OTP
+            OtpService::generateAndSend($user->email, 'login');
 
-            // Force OTP screen instead of direct login
-            Auth::logout(); // We'll log them in only after OTP
+            Auth::logout(); // Log them out pending OTP
             session(['pending_login_email' => $request->email]);
 
             return view('auth.verify-otp', ['email' => $request->email, 'type' => 'login']);
@@ -150,6 +167,10 @@ class AuthController extends Controller
             session()->forget('pending_login_email');
             
             $request->session()->regenerate();
+            
+            // Update Activity Timestamp
+            $user->update(['last_login_at' => now()]);
+            
             $this->mergeCart($user);
 
             return $this->redirectBasedOnRole($user);
@@ -163,10 +184,9 @@ class AuthController extends Controller
     -------------------------- */
     protected function redirectBasedOnRole($user)
     {
-        if ($user->isAdmin() || $user->email === 'admin@store.com') {
+        // Treat both Admin and Seller (legacy) as Admin
+        if ($user->isAdmin() || $user->isSeller()) {
             return redirect()->route('admin.dashboard');
-        } elseif ($user->isSeller()) {
-            return redirect()->route('seller.dashboard');
         } else {
             return redirect()->route('products.index');
         }

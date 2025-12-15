@@ -30,15 +30,18 @@
             background: #fff;
         }
         .input-wrap { position: relative; }
-        .input-wrap svg {
+        .input-wrap > svg {
             position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity:.6;
+            pointer-events: none; /* Ensure clicks pass through left icon */
         }
         .input-wrap input, .input-wrap textarea {
             padding-left: 48px !important;
+            padding-right: 48px !important;
         }
         .eye {
             position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
             cursor: pointer; opacity:.6; font-size: 1.15rem;
+            z-index: 10;
         }
         .btn-grad {
             background-image: linear-gradient(90deg,#2563eb 0%,#7c3aed 100%);
@@ -100,15 +103,6 @@
 
                     <div class="input-wrap">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
-                        </svg>
-                        <textarea name="address" rows="3" placeholder="Full Address" required
-                                  class="field w-full p-3.5 rounded-xl border resize-none"></textarea>
-                        @error('address') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="input-wrap">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M6.62 10.79a15.2 15.2 0 016.59 6.59l2.2-2.2a1 1 0 011.11-.22 11.11 11.11 0 004.66.94 1 1 0 011 1v3.5a1 1 0 01-1 1C9.89 21.52 3 15.37 3 8a1 1 0 011-1h3.5a1 1 0 011 1c0 1.56.33 3.06.94 4.66a1 1 0 01-.22 1.11l-2.2 2.2z"/>
                         </svg>
                         <input type="text" name="phone" placeholder="Phone Number" required
@@ -122,7 +116,12 @@
                         </svg>
                         <input type="password" id="password" name="password" placeholder="Password" required
                                class="field w-full p-3.5 rounded-xl border">
-                        <span class="eye" onclick="toggle('password')">Eye</span>
+                        <span class="eye" onclick="toggle('password')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500 hover:text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </span>
                         @error('password') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
@@ -132,23 +131,15 @@
                         </svg>
                         <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirm Password" required
                                class="field w-full p-3.5 rounded-xl border">
-                        <span class="eye" onclick="toggle('password_confirmation')">Eye</span>
+                        <span class="eye" onclick="toggle('password_confirmation')">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500 hover:text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </span>
                     </div>
 
-                    <!-- Role Selection -->
-                    <div class="p-4 bg-white/50 rounded-xl border border-gray-200">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">I am a:</label>
-                        <div class="flex items-center gap-6">
-                            <label class="flex items-center cursor-pointer">
-                                <input type="radio" name="role" value="buyer" checked class="w-5 h-5 text-indigo-600 focus:ring-indigo-500">
-                                <span class="ml-2 text-gray-800 font-medium">Buyer</span>
-                            </label>
-                            <label class="flex items-center cursor-pointer">
-                                <input type="radio" name="role" value="seller" class="w-5 h-5 text-purple-600 focus:ring-purple-500">
-                                <span class="ml-2 text-gray-800 font-medium">Seller</span>
-                            </label>
-                        </div>
-                    </div>
+
 
                     <button type="submit" class="btn-grad text-white w-full py-4 rounded-xl font-bold text-lg shadow-lg">
                         Register
