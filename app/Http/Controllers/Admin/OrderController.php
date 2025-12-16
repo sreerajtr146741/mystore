@@ -15,7 +15,7 @@ class OrderController extends Controller
     {
         $status = $request->get('status', 'all');
         
-        $query = Order::with('user')->latest();
+        $query = Order::with(['user', 'items.product'])->latest();
 
         // Search
         if ($request->filled('search')) {
@@ -36,6 +36,10 @@ class OrderController extends Controller
         }
 
         $orders = $query->paginate(12)->withQueryString();
+
+        if ($request->ajax()) {
+            return view('admin.orders.partials.row', compact('orders'))->render();
+        }
 
         // Calculate Counts
         $counts = [

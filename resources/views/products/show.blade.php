@@ -57,8 +57,8 @@
             background: linear-gradient(120deg,#6d28d9 0%, #4c1d95 45%, #3b82f6 100%);
             color:#fff; border-radius:16px; padding:22px; box-shadow:0 18px 40px rgba(76,29,149,.25);
         }
-        .gallery{ border-radius:16px; overflow:hidden; background:#fff; box-shadow:0 10px 26px rgba(2,6,23,.08); }
-        .img-main{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
+        .gallery{ border-radius:24px; overflow:hidden; background:#fff; box-shadow:0 20px 40px rgba(0,0,0,.08); display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .img-main{ max-width:100%; height:auto; max-height:600px; object-fit:contain; display:block; }
         .badge-cat{ background:#fff3c4; color:#7c2d12; border:1px solid #fde68a; }
         .stock-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:.4rem; }
         .strike{ text-decoration: line-through; opacity:.7; margin-right:.4rem; }
@@ -149,7 +149,7 @@
 
 <div class="container py-4">
     <div class="hero mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between">
-        <h1 class="h4 fw-bold mb-2 mb-lg-0">{{ $p->name }}</h1>
+        <h1 class="display-6 fw-bold mb-2 mb-lg-0" style="letter-spacing: -0.03em;">{{ $p->name }}</h1>
         @if($p->category)
             <span class="badge badge-cat">{{ $p->category }}</span>
         @endif
@@ -170,12 +170,6 @@
                         <i class="bi bi-image fs-1 text-muted"></i>
                     </div>
                 @endif
-            </div>
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Description</h5>
-                    <p class="mb-0">{{ $p->description ?: 'No description available.' }}</p>
-                </div>
             </div>
         </div>
 
@@ -217,17 +211,17 @@
 
                     <div class="d-flex gap-3 flex-wrap">
                         @auth
-                            <form action="{{ route('cart.add', $p) }}" method="POST" class="d-inline">
+                            <form action="{{ route('cart.add', $p) }}" method="POST" class="d-inline flex-fill">
                                 @csrf
                                 <input type="hidden" name="qty" id="qty_add" value="1">
-                                <button type="submit" class="btn btn-cart rounded-pill shadow">
+                                <button type="submit" class="btn btn-cart rounded-pill shadow w-100">
                                     Add to Cart
                                 </button>
                             </form>
 
-                            <form action="{{ route('checkout.single', $p->id) }}" method="GET" class="d-inline">
+                            <form action="{{ route('checkout.single', $p->id) }}" method="GET" class="d-inline flex-fill">
                                 <input type="hidden" name="qty" id="qty_buy" value="1">
-                                <button type="submit" class="btn btn-buynow rounded-pill shadow">
+                                <button type="submit" class="btn btn-buynow rounded-pill shadow w-100">
                                     Buy Now
                                 </button>
                             </form>
@@ -244,6 +238,18 @@
                     <div class="mt-3 small text-muted">
                         Added on {{ $p->created_at?->format('d M Y') }}
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {{-- Full Width Description --}}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Description</h5>
+                    <p class="mb-0 lh-lg text-secondary" style="white-space: pre-wrap;">{{ $p->description ?: 'No description available.' }}</p>
                 </div>
             </div>
         </div>

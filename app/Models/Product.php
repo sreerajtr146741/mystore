@@ -132,17 +132,40 @@ class Product extends Model
         $cat = $this->linkedCategory; 
 
         if ($cat) {
-            // A. Check Immediate Category (e.g. BMW)
+            // A. Check Immediate Category
             if (!is_null($cat->discount_percent)) {
-                // Check Expiry
-                if (!$cat->discount_expires_at || Carbon::now()->lt($cat->discount_expires_at)) {
+                // Check Expiry (Timezone Aware - Fix)
+                // Use getRawOriginal to bypass Laravel's UTC casting and parse strictly as Kolkata time
+                $rawExpiry = $cat->getRawOriginal('discount_expires_at');
+                $now = Carbon::now('Asia/Kolkata');
+                
+                $isValid = true;
+                if ($rawExpiry) {
+                    $exp = Carbon::parse($rawExpiry, 'Asia/Kolkata'); 
+                    if ($now->gt($exp)) {
+                        $isValid = false;
+                    }
+                }
+
+                if ($isValid) {
                     $percent = (float) $cat->discount_percent;
                 }
             } 
             
             // B. If no valid discount found from immediate category (inherited or expired), Check Parent
             if ($percent == 0 && $cat->parent && !is_null($cat->parent->discount_percent)) {
-                 if (!$cat->parent->discount_expires_at || Carbon::now()->lt($cat->parent->discount_expires_at)) {
+                 $rawExpiry = $cat->parent->getRawOriginal('discount_expires_at');
+                 $now = Carbon::now('Asia/Kolkata'); // Ensure scope consistency
+                 
+                 $isValid = true;
+                 if ($rawExpiry) {
+                     $exp = Carbon::parse($rawExpiry, 'Asia/Kolkata');
+                     if ($now->gt($exp)) {
+                         $isValid = false;
+                     }
+                 }
+                 
+                 if ($isValid) {
                     $percent = (float) $cat->parent->discount_percent;
                  }
             }

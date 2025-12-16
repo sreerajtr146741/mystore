@@ -8,14 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+    @include('partials.premium-styles')
     <style>
-        :root{
-            --bg:#070c14; --panel:#0b1220; --field:#0f1626;
-            --muted:#1b2536; --ink:#e6edf7; --ink-60:#a9b6c9;
-            --brand:#60a5fa; --cyan:#22d3ee; --table:#0f1626;
-        }
-        body { background:var(--bg); color:var(--ink); }
-        .navbar{ background:#0b1220; border-bottom:1px solid rgba(255,255,255,.1); }
         .control-h { height:42px; }
         .rounded-14 { border-radius:14px; }
         .toolbar { gap:.5rem; flex-wrap:nowrap; }
@@ -170,59 +164,62 @@ $resolveImg = function($path){
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse($products as $p)
-                        @php
-                            $img = $resolveImg($p->image);
-                            $isActive = ($p->status === 'active') || ($p->is_active == 1);
-                        @endphp
-                        <tr>
-                            <td>#{{ $p->id }}</td>
-                            <td>
-                                @if($img)
-                                    <img src="{{ $img }}" class="img-thumb" alt="Product">
-                                @else
-                                    <div class="img-thumb bg-secondary d-flex align-items-center justify-content-center text-white-50">N/A</div>
-                                @endif
-                            </td>
-                            <td>{{ $p->name }}</td>
-                            <td>{{ $p->category }}</td>
-                            <td class="text-end">₹{{ number_format($p->price,2) }}</td>
-                            <td class="text-end">{{ $p->stock }}</td>
-                            <td>
-                                @if($isActive)
-                                    <span class="badge bg-success">Active</span>
-                                @else
-                                    <span class="badge bg-secondary">Hidden</span>
-                                @endif
-                            </td>
-                            <td>{{ $p->user->name ?? '—' }}</td>
-                            <td class="text-end">
-                                <form method="POST" action="{{ route('admin.products.destroy', $p->id) }}" class="d-inline">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-del btn-act" onclick="return confirm('Delete this product?')">
-                                        Delete
-                                    </button>
-                                </form>
-                                <a href="{{ route('admin.products.edit', $p->id) }}" class="btn btn-edit btn-act">
-                                    Edit
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9" class="text-center text-white-50 py-5">No products found.</td>
-                        </tr>
-                    @endforelse
+                <tbody id="product-rows">
+                    @include('admin.products.partials.row', ['products' => $products])
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="mt-3">
-        {{ $products->withQueryString()->links() }}
-    </div>
+    <!-- Infinite Scroll Elements -->
+    @if($products->hasMorePages())
+        <div id="loading-spinner" class="text-center py-4 d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        <div id="sentinel" style="height:20px;"></div>
+        <div id="pagination-data" data-next-url="{{ $products->nextPageUrl() }}" style="display:none;"></div>
+    @endif
 </main>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let nextUrl = document.getElementById('pagination-data')?.dataset.nextUrl;
+    const sentinel = document.getElementById('sentinel');
+    const spinner = document.getElementById('loading-spinner');
+    const container = document.getElementById('product-rows');
+    let isLoading = false;
+
+    if (sentinel && nextUrl) {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isLoading && nextUrl) {
+                loadMore();
+            }
+        }, { rootMargin: '200px' });
+        observer.observe(sentinel);
+
+        function loadMore() {
+            isLoading = true;
+            spinner.classList.remove('d-none');
+            fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+                spinner.classList.add('d-none');
+                if (html.trim()) {
+                    container.insertAdjacentHTML('beforeend', html);
+                    const currentUrl = new URL(nextUrl);
+                    const p = parseInt(currentUrl.searchParams.get('page')||1) + 1;
+                    currentUrl.searchParams.set('page', p);
+                    nextUrl = currentUrl.toString();
+                    isLoading = false;
+                } else {
+                    observer.disconnect();
+                    sentinel.remove();
+                }
+            })
+            .catch(()=> { spinner.classList.add('d-none'); isLoading = false; });
+        }
+    }
+});
+</script>
 
 {{-- Category Discount Modal --}}
 <div class="modal fade" id="categoryDiscountModal" tabindex="-1">

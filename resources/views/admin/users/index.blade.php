@@ -6,13 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body { background:#0b0c10; color:#e9ecef; }
-        .table { color:#e9ecef; }
-        .badge-active { background:#10b981; }
-        .badge-suspended { background:#f59e0b; }
-        .badge-blocked { background:#ef4444; }
-    </style>
+    @include('partials.premium-styles')
 </head>
 <body>
 
@@ -94,61 +88,64 @@
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse($users as $user)
-                        <tr>
-                            <td>{{ $user->id }}</td>
-                            <td>{{ $user->name }}</td>
-                            <td>{{ $user->email }}</td>
-                            <td><span class="badge bg-info">{{ ucfirst($user->role) }}</span></td>
-                            <td>
-                                @if($user->status == 'active')
-                                    <span class="badge badge-active">Active</span>
-                                @elseif($user->status == 'suspended')
-                                    <span class="badge badge-suspended">Suspended</span>
-                                @else
-                                    <span class="badge badge-blocked">Blocked</span>
-                                @endif
-                            </td>
-                            <td>{{ $user->created_at->format('M d, Y') }}</td>
-                            <td class="text-end">
-                                @if($user->email !== 'admin@store.com')
-                                    <div class="btn-group btn-group-sm">
-                                        <form method="POST" action="{{ route('admin.users.toggle', $user->id) }}" class="d-inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button class="btn {{ $user->status == 'active' ? 'btn-outline-warning' : 'btn-outline-success' }} btn-sm" 
-                                                    title="{{ $user->status == 'active' ? 'Deactivate User' : 'Activate User' }}">
-                                                <i class="bi bi-power"></i>
-                                            </button>
-                                        </form>
-
-                                        <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-dark btn-sm" title="Delete" onclick="return confirm('Delete this user permanently?')">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                @else
-                                    <span class="text-muted">Protected</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No users found</td>
-                        </tr>
-                    @endforelse
+                <tbody id="user-rows">
+                    @include('admin.users.partials.row', ['users' => $users])
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="mt-4">
-        {{ $users->links() }}
-    </div>
+    <!-- Infinite Scroll Elements -->
+    @if($users->hasMorePages())
+        <div id="loading-spinner" class="text-center py-4 d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        <div id="sentinel" style="height:20px;"></div>
+        <div id="pagination-data" data-next-url="{{ $users->nextPageUrl() }}" style="display:none;"></div>
+    @endif
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let nextUrl = document.getElementById('pagination-data')?.dataset.nextUrl;
+    const sentinel = document.getElementById('sentinel');
+    const spinner = document.getElementById('loading-spinner');
+    const container = document.getElementById('user-rows');
+    let isLoading = false;
+
+    if (sentinel && nextUrl) {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isLoading && nextUrl) {
+                loadMore();
+            }
+        }, { rootMargin: '200px' });
+        observer.observe(sentinel);
+
+        function loadMore() {
+            isLoading = true;
+            spinner.classList.remove('d-none');
+            fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+                spinner.classList.add('d-none');
+                if (html.trim()) {
+                    container.insertAdjacentHTML('beforeend', html);
+                    const currentUrl = new URL(nextUrl);
+                    const p = parseInt(currentUrl.searchParams.get('page')||1) + 1;
+                    currentUrl.searchParams.set('page', p);
+                    nextUrl = currentUrl.toString();
+                    isLoading = false;
+                } else {
+                    observer.disconnect();
+                    sentinel.remove();
+                }
+            })
+            .catch(()=> { spinner.classList.add('d-none'); isLoading = false; });
+        }
+    }
+});
+</script>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

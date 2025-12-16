@@ -7,16 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { background:#0b0c10; color:#e9ecef; min-height:100vh; }
-        .stat-card { background:#1f2937; border:none; border-radius:12px; transition:transform 0.2s; color:#e9ecef; }
-        .stat-card:hover { transform:translateY(-4px); }
-        .stat-card h3, .stat-card h6 { color:#fff; }
-        .stat-card .text-muted { color:#9ca3af !important; }
-        .stat-card small { color:#d1d5db; }
-        .stat-icon { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; }
-        .table { color:#e9ecef; }
-    </style>
+    @include('partials.premium-styles')
 </head>
 <body>
 
@@ -123,21 +114,21 @@
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="card stat-card p-3 h-100">
-                <h6 class="text-muted mb-3">User Breakdown</h6>
+                <h6 class="text-light mb-3">User Breakdown</h6>
                 <div class="d-flex justify-content-between mb-2">
-                    <span><i class="bi bi-circle-fill text-primary me-2" style="font-size:8px"></i>Buyers</span>
-                    <strong>{{ $stats['buyers'] }}</strong>
+                    <span class="text-white"><i class="bi bi-circle-fill text-primary me-2" style="font-size:8px"></i>Buyers</span>
+                    <strong class="text-white">{{ $stats['buyers'] }}</strong>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span><i class="bi bi-circle-fill text-warning me-2" style="font-size:8px"></i>Suspended</span>
-                    <strong>{{ $stats['suspended_users'] }}</strong>
+                    <span class="text-white"><i class="bi bi-circle-fill text-warning me-2" style="font-size:8px"></i>Suspended</span>
+                    <strong class="text-white">{{ $stats['suspended_users'] }}</strong>
                 </div>
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="card stat-card p-3 h-100">
-                <h6 class="text-muted mb-3">Quick Actions</h6>
+                <h6 class="text-light mb-3">Quick Actions</h6>
                 <div class="d-grid gap-2">
                     <a href="{{ route('admin.products.list') }}" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-box me-2"></i>Manage Products
@@ -182,12 +173,12 @@ new Chart(ctx, {
         scales: {
             y: {
                 beginAtZero: true,
-                ticks: { color: '#9ca3af' },
-                grid: { color: '#374151' }
+                ticks: { color: '#e5e7eb' },
+                grid: { color: 'rgba(255, 255, 255, 0.1)' }
             },
             x: {
-                ticks: { color: '#9ca3af' },
-                grid: { color: '#374151' }
+                ticks: { color: '#e5e7eb' },
+                grid: { color: 'rgba(255, 255, 255, 0.1)' }
             }
         }
     }

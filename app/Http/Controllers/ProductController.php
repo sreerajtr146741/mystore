@@ -52,11 +52,13 @@ class ProductController extends Controller
                 });
             }
 
-            $products = $query->latest()->paginate(12);
+            $products = $query->with('linkedCategory')->latest()->paginate(12);
 
-            // Add discounted price to each product for display
-            foreach ($products as $product) {
-                $product->final_price = $this->calculateFinalPrice($product);
+            // Removing manual final_price calculation loop as it bypasses Model logic
+            // and logic is now handled centralized in Product::getDiscountedPriceAttribute
+
+            if ($request->ajax()) {
+                return view('partials.product-list', compact('products'))->render();
             }
 
             return view('products.index', compact('products'));
@@ -75,7 +77,7 @@ class ProductController extends Controller
                 abort_unless(($product->status ?? '') === 'active', 404);
             }
 
-            $product->final_price = $this->calculateFinalPrice($product);
+            // $product->final_price = $this->calculateFinalPrice($product); // REMOVED: Use Model Accessor
 
             return view('products.show', compact('product'));
         } catch (\Throwable $e) {
@@ -120,7 +122,7 @@ class ProductController extends Controller
             $cart = session('cart', []);
 
             // Use final discounted price in cart
-            $finalPrice = $this->calculateFinalPrice($product);
+            $finalPrice = $product->discounted_price ?? $product->price;
 
             if (isset($cart[$product->id])) {
                 $cart[$product->id]['qty'] += $qty;
@@ -238,7 +240,8 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
             $qty = max(1, (int) $request->query('qty', 1));
-            $finalPrice = $this->calculateFinalPrice($product);
+            // Use accessor logic
+            $finalPrice = $product->discounted_price ?? $product->price;
 
             session(['checkout_items' => [[
                 'id'             => $product->id,

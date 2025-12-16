@@ -40,10 +40,8 @@
 
 <div class="page-wrap py-4">
 
-  <a href="{{ url()->previous() }}" class="d-inline-flex align-items-center ms-2 mt-2 text-decoration-none fw-bold" style="color:#4c1d95;">← Back</a>
-
   <div class="row justify-content-center mt-2">
-    <div class="col-12">
+    <div class="col-12 col-lg-10 col-xl-8">
       @if(session('success')) <div class="alert alert-success shadow-sm">{{ session('success') }}</div> @endif
       @if ($errors->any())
         <div class="alert alert-danger shadow-sm">

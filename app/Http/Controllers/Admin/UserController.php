@@ -32,6 +32,10 @@ class UserController extends Controller
 
         $users = $query->latest()->paginate(15);
 
+        if ($request->ajax()) {
+            return view('admin.users.partials.row', compact('users'))->render();
+        }
+
         return view('admin.users.index', compact('users'));
     }
 

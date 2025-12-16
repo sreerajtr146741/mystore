@@ -15,10 +15,11 @@
         .price { font-size: 3rem; color: #d32f2f; font-weight: 900; }
         .btn-pay {
             background: linear-gradient(135deg, #10b981, #059669);
-            padding: 20px 80px; font-size: 1.8rem; font-weight: bold;
             border: none; border-radius: 50px;
-            box-shadow: 0 15px 35px rgba(16,185,129,0.4);
+            box-shadow: 0 10px 20px rgba(16,185,129,0.3);
+            transition: transform 0.2s;
         }
+        .btn-pay:hover { transform: translateY(-2px); }
         .payment-tab-icon { font-size: 1.8rem; margin-right: 8px; }
         .credit-card-input { font-family: 'Courier New', monospace; letter-spacing: 6px; font-size: 1.6rem; text-align: center; }
         .edit-btn { border: none; background: transparent; color: var(--primary); font-weight: 700; }
@@ -50,7 +51,7 @@
 <div class="container checkout-wrapper">
     <div class="row g-5">
         <!-- LEFT: Order Summary -->
-        <div class="col-lg-6">
+        <div class="col-lg-7">
             <div class="card h-100">
                 <div class="card-header bg-gradient text-white py-4" style="background: linear-gradient(135deg, #6d28d9,#4c1d95)!important;">
                     <h3 class="mb-0 fw-bold">Order Summary</h3>
@@ -126,7 +127,7 @@
         </div>
 
         <!-- RIGHT: Payment + Delivery -->
-        <div class="col-lg-6">
+        <div class="col-lg-5">
             <div class="card">
                 <div class="card-header bg-white border-0 py-4 d-flex justify-content-between align-items-center">
                     <h3 class="fw-bold mb-0">Secure Payment</h3>
@@ -222,7 +223,7 @@
 
                         <!-- PAY NOW BUTTON (OTP will be sent) -->
                         <div class="text-center mt-5">
-                            <button type="submit" class="btn btn-pay text-white shadow-lg w-100 rounded-pill" {{ $total <= 0 ? 'disabled' : '' }}>
+                            <button type="submit" class="btn btn-pay text-white shadow-lg rounded-pill px-5 py-3" {{ $total <= 0 ? 'disabled' : '' }}>
                                 Proceed to Pay<br>
                                 <small class="opacity-90 fs-6">Total: ₹{{ number_format($total, 2) }}</small>
                             </button>

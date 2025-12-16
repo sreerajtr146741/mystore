@@ -6,15 +6,15 @@
 <title>Order Management • Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-<style>
-    body { background: #f8f9fa; }
-    .nav-tabs .nav-link { color: #4b5563; font-weight: 500; border: none; border-bottom: 2px solid transparent; padding: 0.75rem 1rem; }
-    .nav-tabs .nav-link:hover { color: #111827; border-color: #e5e7eb; }
-    .nav-tabs .nav-link.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; background: none; }
-    .table-card { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); border: none; }
-    .badge-count { font-size: 0.75em; padding: 2px 6px; border-radius: 10px; margin-left: 5px; background: #e5e7eb; color: #374151; }
-    .nav-link.active .badge-count { background: #dbeafe; color: #1e40af; }
-</style>
+    @include('partials.premium-styles')
+    <style>
+        .nav-tabs .nav-link { color: #94a3b8; font-weight: 500; border: none; border-bottom: 2px solid transparent; padding: 0.75rem 1rem; }
+        .nav-tabs .nav-link:hover { color: #fff; border-color: rgba(255,255,255,0.1); }
+        .nav-tabs .nav-link.active { color: #fff; border-bottom-color: #fff; font-weight: 600; background: none; }
+        .table-card { box-shadow: none; border: none; background: transparent; }
+        .badge-count { font-size: 0.75em; padding: 2px 6px; border-radius: 10px; margin-left: 5px; background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-link.active .badge-count { background: #fff; color: #000; }
+    </style>
 </head>
 <body>
 
@@ -91,111 +91,17 @@
                         <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse($orders as $order)
-                        <tr>
-                            <td class="ps-4 py-3">
-                                <div class="fw-bold text-dark">#{{ $order->id }}</div>
-                                <div class="small text-muted mb-1">{{ $order->user->name ?? 'Guest' }}</div>
-                                <div class="small text-muted">{{ $order->items->count() }} Items</div>
-                            </td>
-                            <td>
-                                <div class="small text-muted">Ordered: {{ $order->created_at->format('M d, Y') }}</div>
-                                @if($order->status == 'delivered')
-                                    <div class="small text-success fw-bold">Delivered: {{ $order->updated_at->format('M d') }}</div>
-                                @elseif($order->status == 'shipped')
-                                    <div class="small text-primary fw-bold">Shipped: {{ $order->updated_at->format('M d') }}</div>
-                                @elseif($order->status == 'processing')
-                                    <div class="small text-info fw-bold">Processing: {{ $order->updated_at->format('M d') }}</div>
-                                @elseif($order->delivery_date)
-                                     <div class="small text-muted">Exp: {{ $order->delivery_date->format('M d') }}</div>
-                                @endif
-                            </td>
-                            <td>
-                                @php
-                                    $badge = match($order->status) {
-                                        'placed' => 'bg-secondary',
-                                        'processing' => 'bg-info text-dark',
-                                        'shipped' => 'bg-primary',
-                                        'out_for_delivery' => 'bg-warning text-dark',
-                                        'delivered' => 'bg-success',
-                                        'cancelled' => 'bg-danger',
-                                        default => 'bg-light text-dark border',
-                                    };
-                                @endphp
-                                <span class="badge {{ $badge }} rounded-pill font-monospace fw-normal px-3 py-2">
-                                    {{ ucfirst(str_replace('_', ' ', $order->status)) }}
-                                </span>
-                            </td>
-                            <td class="fw-bold">₹{{ number_format($order->total, 2) }}</td>
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-2">
-                                    {{-- Quick Action Button --}}
-                                    @if($order->status == 'placed')
-                                        <form action="{{ route('admin.orders.update_status', $order->id) }}" method="POST" class="d-inline status-update-form">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="processing">
-                                            <button class="btn btn-sm btn-outline-primary" title="Accept Order">
-                                                Accept
-                                            </button>
-                                        </form>
-                                    @elseif($order->status == 'processing')
-                                        <form action="{{ route('admin.orders.update_status', $order->id) }}" method="POST" class="d-inline status-update-form">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="shipped">
-                                            <button class="btn btn-sm btn-warning text-dark" title="Ship Order">
-                                                Ship
-                                            </button>
-                                        </form>
-                                    @elseif($order->status == 'shipped')
-                                        <form action="{{ route('admin.orders.update_status', $order->id) }}" method="POST" class="d-inline status-update-form">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="delivered">
-                                            <button class="btn btn-sm btn-success" title="Mark Delivered">
-                                                Deliver
-                                            </button>
-                                        </form>
-                                    @endif
-
-                                    {{-- Manual Status Override (Dropdown) --}}
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><h6 class="dropdown-header">Update Status</h6></li>
-                                            @foreach(['placed','processing','shipped','delivered','cancelled'] as $s)
-                                                <li>
-                                                    <form action="{{ route('admin.orders.update_status', $order->id) }}" method="POST" class="status-update-form">
-                                                        @csrf @method('PATCH')
-                                                        <input type="hidden" name="status" value="{{ $s }}">
-                                                        <button class="dropdown-item {{ $order->status == $s ? 'active' : '' }}">{{ ucfirst($s) }}</button>
-                                                    </form>
-                                                </li>
-                                            @endforeach
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item" href="{{ route('admin.orders.show', $order->id) }}"><i class="bi bi-eye me-2"></i>View Details</a></li>
-                                            <li><a class="dropdown-item" href="{{ route('admin.orders.download', $order->id) }}"><i class="bi bi-download me-2"></i>Invoice</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox display-6 d-block mb-3"></i>
-                                No orders found in this category.
-                            </td>
-                        </tr>
-                    @endforelse
+                <tbody id="order-rows">
+                    @include('admin.orders.partials.row', ['orders' => $orders])
                 </tbody>
             </table>
         </div>
-        @if($orders->hasPages())
-            <div class="card-footer bg-white border-top-0 py-3">
-                {{ $orders->links() }}
+        @if($orders->hasMorePages())
+            <div id="loading-spinner" class="text-center py-4 d-none">
+                <div class="spinner-border text-primary" role="status"></div>
             </div>
+            <div id="sentinel" style="height:20px;"></div>
+            <div id="pagination-data" data-next-url="{{ $orders->nextPageUrl() }}" style="display:none;"></div>
         @endif
     </div>
 
@@ -204,31 +110,82 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const forms = document.querySelectorAll('.status-update-form');
-    
-    // Status Messages Map
-    const warningMessages = {
-        'placed': "Reset status to Placed?",
-        'processing': "Mark as Processing? (Packing)",
-        'shipped': "Mark as Shipped? (On the way)",
-        'delivered': "Mark as Delivered? (Completed)",
-        'cancelled': "Cancel this order? This cannot be undone clearly."
-    };
+    // 1. Infinite Scroll
+    let nextUrl = document.getElementById('pagination-data')?.dataset.nextUrl;
+    const sentinel = document.getElementById('sentinel');
+    const spinner = document.getElementById('loading-spinner');
+    const container = document.getElementById('order-rows');
+    let isLoading = false;
 
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
+    if (sentinel && nextUrl) {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isLoading && nextUrl) {
+                loadMore();
+            }
+        }, { rootMargin: '200px' });
+        observer.observe(sentinel);
+
+        function loadMore() {
+            isLoading = true;
+            spinner.classList.remove('d-none');
+            fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+                spinner.classList.add('d-none');
+                if (html.trim()) {
+                    container.insertAdjacentHTML('beforeend', html);
+                    const currentUrl = new URL(nextUrl);
+                    const p = parseInt(currentUrl.searchParams.get('page')||1) + 1;
+                    currentUrl.searchParams.set('page', p);
+                    nextUrl = currentUrl.toString();
+                    isLoading = false;
+                    attachFormListeners(); // Re-attach for new rows
+                } else {
+                    observer.disconnect();
+                    sentinel.remove();
+                }
+            })
+            .catch(()=> { spinner.classList.add('d-none'); isLoading = false; });
+        }
+    }
+
+    // 2. Status Confirmations
+    function attachFormListeners() {
+        // Warning messages map (copied from original)
+        const warningMessages = {
+            'placed': "Reset status to Placed?",
+            'processing': "Mark as Processing? (Packing)",
+            'shipped': "Mark as Shipped? (On the way)",
+            'delivered': "Mark as Delivered? (Completed)",
+            'cancelled': "Cancel this order? This cannot be undone clearly."
+        };
+
+        // We use delegation for newly added forms too, but the original script used direct attachment.
+        // Let's use delegation on the container for robustness.
+    }
+    
+    // Delegation for Status Forms (handles both initial and dynamic rows)
+    document.getElementById('order-rows').addEventListener('submit', function(e) {
+        if (e.target.classList.contains('status-update-form')) {
             e.preventDefault();
-            const input = this.querySelector('input[name="status"]');
+            const form = e.target;
+            const input = form.querySelector('input[name="status"]');
             const newStatus = input ? input.value : 'unknown';
             
-            // Only confirm if not the primary quick action (or maybe always confirm?) 
-            // User requested confirmation for all status changes before.
+            const warningMessages = {
+                'placed': "Reset status to Placed?",
+                'processing': "Mark as Processing? (Packing)",
+                'shipped': "Mark as Shipped? (On the way)",
+                'delivered': "Mark as Delivered? (Completed)",
+                'cancelled': "Cancel this order? This cannot be undone clearly."
+            };
+            
             const msg = warningMessages[newStatus] || `Update status to ${newStatus}?`;
 
             if (confirm(msg)) {
-                this.submit();
+                form.submit();
             }
-        });
+        }
     });
 });
 </script>

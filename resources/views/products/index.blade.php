@@ -1,4 +1,3 @@
-{{-- resources/views/products/index.blade.php --}}
 @php
     use Illuminate\Support\Facades\Storage;
     use Illuminate\Support\Str;
@@ -146,79 +145,24 @@
     @endif
 
     @if($products->count())
-        <div class="row g-4 mt-1">
-            @foreach($products as $p)
-                @php
-                    $photo = $img($p->image);
-                    // FIX 1: Use discounted_price (includes category discount) as priority
-                    $finalPrice  = $p->discounted_price ?? $p->final_price ?? $p->price;
-                    $hasDiscount = $finalPrice < $p->price;
-                    $saveAmt = $p->price - $finalPrice;
-                    $savePct = $p->price > 0 ? round(($saveAmt / $p->price) * 100) : 0;
-                    $stock = $p->stock ?? null;
-                    $href = route('products.show', $p);
-                @endphp
-
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-                    <div class="card card-prod h-100" data-href="{{ $href }}">
-                        {{-- Discount Ribbon --}}
-                        @if($hasDiscount)
-                            <div class="ribbon">{{ $savePct }}% OFF</div>
-                        @endif
-
-                        {{-- Image --}}
-                        @if($photo)
-                            <img class="img-fit" src="{{ $photo }}" alt="{{ $p->name }}">
-                        @else
-                            <div class="bg-light d-flex align-items-center justify-content-center" style="aspect-ratio:4/3;">
-                                <i class="bi bi-image fs-1 text-muted"></i>
-                            </div>
-                        @endif
-
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="fw-bold mb-1 text-truncate" title="{{ $p->name }}">{{ $p->name }}</h5>
-
-                            <div class="mb-2">
-                                @if($p->category)
-                                    <span class="badge badge-cat">{{ $p->category }}</span>
-                                @endif
-                            </div>
-
-                            <p class="muted small flex-grow-1">
-                                {{ $p->description ? Str::limit($p->description, 90) : 'No description' }}
-                            </p>
-
-                            @if(!is_null($stock))
-                                <div class="small {{ $stock > 0 ? 'text-success' : 'text-danger' }}">
-                                    <span class="stock-dot" style="background:{{ $stock > 0 ? '#22c55e' : '#ef4444' }}"></span>
-                                    {{ $stock > 0 ? $stock.' in stock' : 'Out of stock' }}
-                                </div>
-                            @endif
-
-                            <div class="mt-2">
-                                @if($hasDiscount)
-                                    <div>
-                                        <span class="strike muted">₹{{ number_format($p->price, 2) }}</span>
-                                        <span class="price text-success">₹{{ number_format($finalPrice, 2) }}</span>
-                                    </div>
-                                    <div class="small text-success">
-                                        Save ₹{{ number_format($saveAmt, 2) }} ({{ $savePct }}%)
-                                    </div>
-                                @else
-                                    <span class="price">₹{{ number_format($p->price, 2) }}</span>
-                                @endif
-                            </div>
-
-
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+        <div class="row g-4 mt-1" id="product-grid">
+            @include('partials.product-list', ['products' => $products])
         </div>
 
-        <div class="mt-5">
-            {{ $products->withQueryString()->links() }}
+        {{-- Loader for Infinite Scroll --}}
+        <div id="loading-spinner" class="text-center py-4 d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
         </div>
+        
+        {{-- Sentinel --}}
+        <div id="sentinel" style="height: 10px;"></div>
+
+        {{-- Hidden Pagination Data --}}
+        @if($products->hasMorePages())
+            <div id="pagination-data" data-next-url="{{ $products->nextPageUrl() }}" style="display:none;"></div>
+        @endif
     @else
         <div class="text-center text-muted py-5">
             <p class="mt-3">No products found.</p>
@@ -228,12 +172,63 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Make entire card clickable except form inputs/buttons
-    document.querySelectorAll('.card-prod').forEach(card => {
-        card.addEventListener('click', function(e) {
-            if (e.target.closest('.stop-click, button, input, a')) return;
-            const href = this.getAttribute('data-href');
-            if (href) window.location.href = href;
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Infinite Scroll Logic
+        let nextUrl = document.getElementById('pagination-data')?.dataset.nextUrl;
+        const sentinel = document.getElementById('sentinel');
+        const spinner = document.getElementById('loading-spinner');
+        const grid = document.getElementById('product-grid');
+        let isLoading = false;
+
+        if (sentinel && nextUrl) {
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && !isLoading && nextUrl) {
+                    loadMoreProducts();
+                }
+            }, { rootMargin: '200px' });
+
+            observer.observe(sentinel);
+
+            function loadMoreProducts() {
+                isLoading = true;
+                spinner.classList.remove('d-none');
+
+                fetch(nextUrl, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    spinner.classList.add('d-none');
+                    if (html.trim().length > 0) {
+                        grid.insertAdjacentHTML('beforeend', html);
+                        
+                        const currentUrl = new URL(nextUrl);
+                        const currentPage = parseInt(currentUrl.searchParams.get('page') || 1);
+                        currentUrl.searchParams.set('page', currentPage + 1);
+                        nextUrl = currentUrl.toString();
+
+                        isLoading = false;
+                    } else {
+                        observer.disconnect();
+                        sentinel.remove();
+                    }
+                })
+                .catch(err => {
+                    console.error('Scroll Error:', err);
+                    spinner.classList.add('d-none');
+                    isLoading = false;
+                });
+            }
+        }
+
+        // 2. Card Click Logic
+        document.body.addEventListener('click', function(e) {
+            const card = e.target.closest('.card-prod');
+            if (card) {
+                if (e.target.closest('.stop-click, button, input, a')) return;
+                const href = card.getAttribute('data-href');
+                if (href) window.location.href = href;
+            }
         });
     });
 </script>

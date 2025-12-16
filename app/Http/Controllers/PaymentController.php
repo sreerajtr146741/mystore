@@ -21,8 +21,11 @@ class PaymentController extends Controller {
         
         $cart = session('cart', []);
         
+        \Log::info('PayNow Init: User ' . auth()->id() . ' | Cart Count: ' . count($cart));
+        
         if(empty($cart)) {
-            return redirect()->route('products.index')->with('error', 'Cart is empty');
+            \Log::warning('PayNow Redirect: Cart is empty for User ' . auth()->id());
+            return redirect()->route('products.index')->with('error', 'Your cart is empty. Please add products before paying.');
         }
 
         $total = 0;

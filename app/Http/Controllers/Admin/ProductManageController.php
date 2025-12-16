@@ -24,6 +24,7 @@ class ProductManageController extends Controller
             $added     = $request->get('added', '');
             $addedFrom = $request->get('added_from', '');
             $addedTo   = $request->get('added_to', '');
+            $q         = $request->get('search') ?? $request->get('q') ?? '';
 
             $tz = 'Asia/Kolkata';
             [$fromDt, $toDt] = $this->computeDateRange($added, $addedFrom, $addedTo, $tz);
@@ -46,6 +47,10 @@ class ProductManageController extends Controller
                 ->orderByDesc('id')
                 ->paginate(12)
                 ->withQueryString();
+
+            if ($request->ajax()) {
+                return view('admin.products.partials.row', compact('products'))->render();
+            }
 
             // Legacy string categories
             $stringCats = Product::query()
@@ -150,7 +155,7 @@ class ProductManageController extends Controller
             // Prioritize ID if sent, otherwise find/create by name
             if (!empty($data['category_id'])) {
                 // ID already valid via validation
-                $data['category_id'] = $data['category_id'];
+                // $data['category_id'] = $data['category_id']; // Redundant
                 // Optionally fill 'category' string for backward compat if column exists
                 $cat = \App\Models\Category::find($data['category_id']);
                 if ($cat) $data['category'] = $cat->name; 
