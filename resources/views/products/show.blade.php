@@ -102,7 +102,7 @@
 
 <nav class="navbar navbar-expand-lg bg-white shadow-sm">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="{{ route('products.index') }}">MyStore</a>
+        <a class="navbar-brand fw-bold" href="{{ route('products.index') }}"><i class="bi bi-bag-fill me-2"></i>MyStore</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
             <span class="navbar-toggler-icon"></span>
         </button>

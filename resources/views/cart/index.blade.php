@@ -22,7 +22,7 @@
 
 <nav class="navbar navbar-expand-lg bg-white shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ route('products.index') }}">MyStore</a>
+    <a class="navbar-brand fw-bold" href="{{ route('products.index') }}"><i class="bi bi-bag-fill me-2"></i>MyStore</a>
 
     <div class="ms-auto d-flex align-items-center gap-3">
       <a href="{{ route('cart.index') }}" class="position-relative text-dark text-decoration-none" aria-label="Cart">

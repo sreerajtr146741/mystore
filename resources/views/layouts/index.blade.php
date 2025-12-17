@@ -66,7 +66,7 @@
         <h1 class="display-2 fw-bold mb-3">
             Welcome back, <span class="text-gradient">{{ auth()->user()->name }}</span>!
         </h1>
-        <p class="lead fs-2">You’re in the <span class="text-info fw-bold">MyStore Control Room</span></p>
+        <p class="lead fs-2">You’re in the <span class="text-info fw-bold"><i class="bi bi-bag-fill me-2"></i>MyStore Control Room</span></p>
     </div>
 
     {{-- ADMIN PANEL --}}

@@ -34,7 +34,7 @@
 
 <nav class="navbar navbar-light bg-white shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ route('products.index') }}">MyStore</a>
+    <a class="navbar-brand fw-bold" href="{{ route('products.index') }}"><i class="bi bi-bag-fill me-2"></i>MyStore</a>
   </div>
 </nav>
 

@@ -19,9 +19,17 @@ class PaymentController extends Controller {
         // Store selected method for the final order creation
         session(['payment_method' => $request->payment_method ?? 'cod']);
         
-        $cart = session('cart', []);
+        // 1. Determine items source (Buy Now vs Cart)
+        $chkItems = session('checkout_items');
+        if (!empty($chkItems)) {
+            $cart = $chkItems;
+            $source = 'checkout_items';
+        } else {
+            $cart = session('cart', []);
+            $source = 'cart';
+        }
         
-        \Log::info('PayNow Init: User ' . auth()->id() . ' | Cart Count: ' . count($cart));
+        \Log::info('PayNow Init: User ' . auth()->id() . ' | Item Count: ' . count($cart));
         
         if(empty($cart)) {
             \Log::warning('PayNow Redirect: Cart is empty for User ' . auth()->id());
@@ -45,9 +53,16 @@ class PaymentController extends Controller {
         ]);
 
         foreach($cart as $id => $details) {
+            // "Buy Now" items structure might differ slightly (index vs product_id key)
+            // But CheckoutController normalizes it. Here we have raw session data.
+            // Cart: [product_id => [...], ...]
+            // Checkout Items: [[id=>..., ...]] (Indexed array of arrays)
+            
+            $prodId = $details['id'] ?? $id; // Handle both structures
+            
             OrderItem::create([
                 'order_id'   => $order->id,
-                'product_id' => $id, // $id is product_id from session key
+                'product_id' => $prodId,
                 'qty'        => $details['qty'],
                 'price'      => $details['price'],
             ]);
@@ -59,6 +74,14 @@ class PaymentController extends Controller {
         } catch(\Exception $e) {
             \Log::error('Order placed email failed: '.$e->getMessage());
         }
+
+        // Clear the used session data
+        if ($source === 'checkout_items') {
+            session()->forget('checkout_items');
+        } else {
+            session()->forget('cart');
+        }
+        session()->forget(['discount_percent','discount_amount','coupon_code','free_shipping']);
 
         // Return success view directly
         return view('payment.success')->with('message', 'Payment successful! Order #' . $order->id . ' placed.');

@@ -82,7 +82,7 @@
 <!-- Navigation -->
 <nav class="navbar navbar-dark">
   <div class="container d-flex justify-content-between align-items-center">
-    <a class="navbar-brand fw-bold" href="{{ url('/dashboard') }}">MyStore</a>
+    <a class="navbar-brand fw-bold" href="{{ url('/dashboard') }}"><i class="bi bi-bag-fill me-2"></i>MyStore</a>
     <div class="d-flex gap-2">
       <a href="{{ route('admin.products.list') }}" class="btn btn-outline-light btn-sm">
         <i class="bi bi-arrow-left"></i> Back

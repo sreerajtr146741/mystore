@@ -92,7 +92,7 @@ $resolveImg = function($path){
 
 <nav class="navbar navbar-dark">
     <div class="container d-flex justify-content-between">
-        <a class="navbar-brand fw-bold" href="{{ url('/dashboard') }}">MyStore</a>
+        <a class="navbar-brand fw-bold" href="{{ url('/dashboard') }}"><i class="bi bi-bag-fill me-2"></i>MyStore</a>
         <div class="d-flex gap-2">
             <a href="{{ url('/dashboard') }}" class="btn btn-outline-light btn-sm">Dashboard</a>
             <form action="{{ route('logout') }}" method="POST">@csrf
