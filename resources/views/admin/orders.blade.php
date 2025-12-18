@@ -76,6 +76,16 @@
                 Cancelled <span class="badge-count">{{ $counts['cancelled'] }}</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link {{ $status == 'return_requested' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'return_requested']) }}">
+                Requests <span class="badge-count">{{ $counts['return_requested'] }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ $status == 'returned' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'returned']) }}">
+                Returned <span class="badge-count">{{ $counts['returned'] }}</span>
+            </a>
+        </li>
     </ul>
 
     <!-- Order List -->
@@ -177,7 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 'processing': "Mark as Processing? (Packing)",
                 'shipped': "Mark as Shipped? (On the way)",
                 'delivered': "Mark as Delivered? (Completed)",
-                'cancelled': "Cancel this order? This cannot be undone clearly."
+                'cancelled': "Cancel this order? This cannot be undone clearly.",
+                'return_requested': "Manually set to Return Requested?",
+                'returned': "Mark as Returned? (Refund logic not automated here)"
             };
             
             const msg = warningMessages[newStatus] || `Update status to ${newStatus}?`;

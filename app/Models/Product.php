@@ -134,13 +134,21 @@ class Product extends Model
         if ($cat) {
             // A. Check Immediate Category
             if (!is_null($cat->discount_percent)) {
-                // Check Expiry (Timezone Aware - Fix)
-                // Use getRawOriginal to bypass Laravel's UTC casting and parse strictly as Kolkata time
-                $rawExpiry = $cat->getRawOriginal('discount_expires_at');
-                $now = Carbon::now('Asia/Kolkata');
-                
                 $isValid = true;
-                if ($rawExpiry) {
+                
+                // Get raw attributes to ensure timezone consistency
+                $rawStart = $cat->getRawOriginal('discount_starts_at');
+                $rawExpiry = $cat->getRawOriginal('discount_expires_at');
+                $now = Carbon::now('Asia/Kolkata'); // Using fixed timezone as requested
+                
+                if ($rawStart) {
+                    $start = Carbon::parse($rawStart, 'Asia/Kolkata');
+                    if ($now->lt($start)) {
+                        $isValid = false;
+                    }
+                }
+
+                if ($isValid && $rawExpiry) {
                     $exp = Carbon::parse($rawExpiry, 'Asia/Kolkata'); 
                     if ($now->gt($exp)) {
                         $isValid = false;
@@ -154,11 +162,20 @@ class Product extends Model
             
             // B. If no valid discount found from immediate category (inherited or expired), Check Parent
             if ($percent == 0 && $cat->parent && !is_null($cat->parent->discount_percent)) {
+                 $rawStart = $cat->parent->getRawOriginal('discount_starts_at');
                  $rawExpiry = $cat->parent->getRawOriginal('discount_expires_at');
-                 $now = Carbon::now('Asia/Kolkata'); // Ensure scope consistency
+                 $now = Carbon::now('Asia/Kolkata');
                  
                  $isValid = true;
-                 if ($rawExpiry) {
+
+                 if ($rawStart) {
+                    $start = Carbon::parse($rawStart, 'Asia/Kolkata');
+                    if ($now->lt($start)) {
+                        $isValid = false;
+                    }
+                 }
+
+                 if ($isValid && $rawExpiry) {
                      $exp = Carbon::parse($rawExpiry, 'Asia/Kolkata');
                      if ($now->gt($exp)) {
                          $isValid = false;

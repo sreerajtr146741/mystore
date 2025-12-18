@@ -75,4 +75,16 @@ class User extends Authenticatable
     {
         return $this->hasOne(SellerApplication::class);
     }
+
+    /**
+     * Get the profile photo URL.
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->profile_photo)) {
+            return asset('storage/' . $this->profile_photo);
+        }
+
+        return 'https://ui-avatars.com/api/?background=6d28d9&color=fff&name=' . urlencode($this->name);
+    }
 }

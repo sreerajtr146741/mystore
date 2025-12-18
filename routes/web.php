@@ -127,6 +127,8 @@ Route::middleware('auth')->group(function () {
     // Orders (User)
     Route::resource('orders', \App\Http\Controllers\OrderController::class)->only(['index', 'show']);
     Route::get('/orders/{id}/download', [\App\Http\Controllers\OrderController::class, 'downloadInvoice'])->name('orders.download');
+    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::post('/orders/{id}/return', [\App\Http\Controllers\OrderController::class, 'requestReturn'])->name('orders.return');
 });
 
 /*
@@ -140,7 +142,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Users Management
     Route::get('/users', [UserController::class, 'index'])->name('users');
-    Route::get('/users', [UserController::class, 'index'])->name('users');
+    Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show'); // Added show route
     Route::patch('/users/{id}/toggle', [UserController::class, 'toggleStatus'])->name('users.toggle');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');

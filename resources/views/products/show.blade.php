@@ -122,10 +122,7 @@
             @auth
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown">
-                        <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center"
-                             style="width:40px;height:40px;">
-                            {{ strtoupper(mb_substr(auth()->user()->first_name ?? auth()->user()->name ?? 'U', 0, 1)) }}
-                        </div>
+                        <img src="{{ auth()->user()->profile_photo_url }}" class="rounded-circle border border-white border-2" width="40" height="40" style="object-fit:cover;">
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li class="px-3 py-2 small text-muted">{{ auth()->user()->email }}</li>

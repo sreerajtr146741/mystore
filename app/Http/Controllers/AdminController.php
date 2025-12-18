@@ -72,7 +72,8 @@ class AdminController extends Controller {
         $request->validate([
             'category_id' => 'required|exists:categories,id', 
             'discount_percent' => 'required|numeric|min:0|max:100',
-            'discount_expires_at' => 'nullable|date|after:now',
+            'discount_starts_at' => 'nullable|date',
+            'discount_expires_at' => 'nullable|date|after_or_equal:discount_starts_at',
         ]);
 
         $category = Category::find($request->category_id);
@@ -83,11 +84,9 @@ class AdminController extends Controller {
         
         $category->update([
             'discount_percent' => $val,
+            'discount_starts_at' => $request->discount_starts_at,
             'discount_expires_at' => $request->discount_expires_at,
         ]);
-
-        // NO recursive update to children anymore. 
-        // We rely on Product model to check Parent if Child is null.
 
         return back()->with('success', 'Discount updated for category.');
     }

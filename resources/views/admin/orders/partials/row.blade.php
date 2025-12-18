@@ -40,6 +40,8 @@
                     'out_for_delivery' => 'bg-warning text-dark',
                     'delivered' => 'bg-success',
                     'cancelled' => 'bg-danger',
+                    'return_requested' => 'bg-warning text-dark',
+                    'returned' => 'bg-secondary',
                     default => 'bg-light text-dark border',
                 };
             @endphp
@@ -75,6 +77,14 @@
                             Deliver
                         </button>
                     </form>
+                @elseif($order->status == 'return_requested')
+                    <form action="{{ route('admin.orders.update_status', $order->id) }}" method="POST" class="d-inline status-update-form">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="returned">
+                        <button class="btn btn-sm btn-success" title="Approve Return">
+                            Approve
+                        </button>
+                    </form>
                 @endif
 
                 {{-- Manual Status Override (Dropdown) --}}
@@ -84,12 +94,12 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li><h6 class="dropdown-header">Update Status</h6></li>
-                        @foreach(['placed','processing','shipped','delivered','cancelled'] as $s)
+                        @foreach(['placed','processing','shipped','delivered','cancelled','returned'] as $s)
                             <li>
                                 <form action="{{ route('admin.orders.update_status', $order->id) }}" method="POST" class="status-update-form">
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="status" value="{{ $s }}">
-                                    <button class="dropdown-item {{ $order->status == $s ? 'active' : '' }}">{{ ucfirst($s) }}</button>
+                                    <button class="dropdown-item {{ $order->status == $s ? 'active' : '' }}">{{ ucfirst(str_replace('_', ' ', $s)) }}</button>
                                 </form>
                             </li>
                         @endforeach

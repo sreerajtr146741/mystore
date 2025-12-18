@@ -38,8 +38,25 @@ class OrderStatusUpdated extends Mailable
      */
     public function content(): Content
     {
+        $view = 'emails.order-status'; // Default fallback
+
+        switch ($this->order->status) {
+            case 'processing':
+                $view = 'emails.orders.processing';
+                break;
+            case 'shipped':
+                $view = 'emails.orders.shipped';
+                break;
+            case 'out_for_delivery':
+                $view = 'emails.orders.out-for-delivery';
+                break;
+            case 'delivered':
+                $view = 'emails.orders.delivered';
+                break;
+        }
+
         return new Content(
-            view: 'emails.order-status',
+            view: $view,
         );
     }
 

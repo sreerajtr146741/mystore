@@ -4,7 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model {
-    protected $fillable = ['name', 'parent_id', 'discount_percent', 'discount_expires_at'];
+    protected $fillable = ['name', 'parent_id', 'discount_percent', 'discount_starts_at', 'discount_expires_at'];
 
     public function parent() {
         return $this->belongsTo(Category::class, 'parent_id');
@@ -19,6 +19,7 @@ class Category extends Model {
     }
 
     protected $casts = [
+        'discount_starts_at'  => 'datetime',
         'discount_expires_at' => 'datetime',
         'discount_percent'    => 'decimal:2',
     ];

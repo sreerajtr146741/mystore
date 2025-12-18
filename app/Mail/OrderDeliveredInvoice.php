@@ -42,7 +42,7 @@ class OrderDeliveredInvoice extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order-delivered-invoice',
+            view: 'emails.orders.delivered',
         );
     }
 

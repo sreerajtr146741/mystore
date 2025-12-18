@@ -223,22 +223,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {{-- Category Discount Modal --}}
 <div class="modal fade" id="categoryDiscountModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form class="modal-content" method="POST" action="{{ route('admin.discount.category') }}" style="background:var(--panel); border:1px solid #334155; color:var(--ink);">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content bg-dark text-white border border-secondary shadow-lg" method="POST" action="{{ route('admin.discount.category') }}">
       @csrf
       <div class="modal-header border-bottom border-secondary">
         <h5 class="modal-title fw-bold"><i class="bi bi-percent me-2"></i>Category Discount Manager</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="alert alert-primary bg-opacity-10 border-primary text-primary">
-          <i class="bi bi-info-circle me-2"></i>
-          <strong>Tip:</strong> Apply discounts to all products in a category at once!
+        <div class="alert alert-primary d-flex align-items-center" role="alert" style="background-color: rgba(13, 110, 253, 0.2); border-color: #0d6efd; color: #6ea8fe;">
+          <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+          <div>
+            <strong>Tip:</strong> Discounts will automatically apply to all products in this category starting from the scheduled time.
+          </div>
         </div>
         
         <div class="mb-3">
-          <label class="form-label fw-semibold">Select Category</label>
-          <select name="category_id" class="form-select" required style="background:var(--field); color:white; border-color:#334155;">
+          <label class="form-label fw-bold text-white">Select Category</label>
+          <select name="category_id" class="form-select bg-dark text-white border-secondary" required>
             <option value="">Choose a category...</option>
             @foreach($allCategories as $parent)
               <option value="{{ $parent->id }}" class="fw-bold">{{ $parent->name }} (All)</option>
@@ -247,23 +249,31 @@ document.addEventListener('DOMContentLoaded', function () {
               @endforeach
             @endforeach
           </select>
-          <div class="form-text mt-1" style="color:var(--ink-60)">
+          <div class="form-text text-muted">
             Select a parent category to discount all items, or a specific subcategory.
           </div>
           
-          <label class="form-label fw-semibold mt-3">Discount Percentage</label>
+          <label class="form-label fw-bold text-white mt-3">Discount Percentage</label>
           <div class="input-group">
-            <input name="discount_percent" type="number" min="0" max="100" step="1" class="form-control" placeholder="e.g., 20" required style="background:var(--field); color:white; border-color:#334155;">
+            <input name="discount_percent" type="number" min="0" max="100" step="1" class="form-control bg-dark text-white border-secondary" placeholder="e.g., 20" required>
             <span class="input-group-text bg-secondary text-white border-secondary">%</span>
           </div>
-          <div class="form-text mt-2 text-warning">
+          <div class="form-text text-warning">
             <i class="bi bi-exclamation-circle me-1"></i> Enter <strong>0</strong> to remove discount from this category.
           </div>
 
-          <label class="form-label fw-semibold mt-3">Expires At (Optional)</label>
-          <input name="discount_expires_at" type="datetime-local" class="form-control" style="background:var(--field); color:white; border-color:#334155;">
-          <div class="form-text mt-1" style="color:var(--ink-60)">
-             Leave blank for no expiration.
+          
+          <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                  <label class="form-label fw-bold text-white">Start Date & Time</label>
+                  <input name="discount_starts_at" type="datetime-local" class="form-control bg-dark text-white border-secondary">
+                  <div class="form-text text-muted">When the discount begins</div>
+              </div>
+              <div class="col-md-6">
+                  <label class="form-label fw-bold text-white">End Date & Time</label>
+                  <input name="discount_expires_at" type="datetime-local" class="form-control bg-dark text-white border-secondary">
+                  <div class="form-text text-muted">When the discount ends (optional)</div>
+              </div>
           </div>
         </div>
       </div>

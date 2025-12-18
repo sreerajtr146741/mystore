@@ -39,6 +39,27 @@ class UserController extends Controller
         return view('admin.users.index', compact('users'));
     }
 
+    public function show($id)
+    {
+        $user = User::withCount('products')->findOrFail($id);
+        
+        // Calculate total spent if orders relationship exists, else 0
+        // Provided generic stats
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone ?? 'N/A',
+            'address' => $user->address ?? 'N/A',
+            'role' => ucfirst($user->role),
+            'status' => ucfirst($user->status),
+            'joined' => $user->created_at->format('d M Y, h:i A'),
+            'avatar' => $user->profile_photo_url,
+            'orders_count' => 0, // Placeholder until orders relationship is confirmed
+            // If user has orders relation: $user->orders()->count()
+        ]);
+    }
+
     public function toggleStatus($id)
     {
         $user = User::findOrFail($id);

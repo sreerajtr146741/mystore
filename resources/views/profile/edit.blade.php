@@ -107,29 +107,7 @@
 
             <div class="divider"></div>
 
-            <div class="section-title" style="color:#0f172a;"><i class="bi bi-shield-lock-fill me-2"></i> Security</div>
-
-            <div class="grid-2">
-              <div class="field">
-                <label class="fw-bold"><i class="bi bi-lock me-1 text-primary"></i> New Password</label>
-                <div class="input-group">
-                    <input type="password" name="password" id="password" class="form-control glass border-end-0" placeholder="••••••••">
-                    <span class="input-group-text glass border-start-0 bg-transparent" style="cursor: pointer;" onclick="togglePassword('password', this)">
-                        <i class="bi bi-eye-slash"></i>
-                    </span>
-                </div>
-                <small class="text-muted">Leave blank to retain your current password.</small>
-              </div>
-              <div class="field">
-                <label class="fw-bold"><i class="bi bi-lock-fill me-1 text-primary"></i> Confirm New Password</label>
-                <div class="input-group">
-                    <input type="password" name="password_confirmation" id="password_confirmation" class="form-control glass border-end-0" placeholder="••••••••">
-                    <span class="input-group-text glass border-start-0 bg-transparent" style="cursor: pointer;" onclick="togglePassword('password_confirmation', this)">
-                        <i class="bi bi-eye-slash"></i>
-                    </span>
-                </div>
-              </div>
-            </div>
+            {{-- Security section removed as per request --}}
 
             <div class="d-flex justify-content-center gap-3 mt-4">
               <button type="submit" class="btn-save px-5"><i class="bi bi-save me-1"></i> Save Changes</button>

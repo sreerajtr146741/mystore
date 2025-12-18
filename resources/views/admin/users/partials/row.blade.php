@@ -17,6 +17,12 @@
         <td class="text-end">
             @if($user->email !== 'admin@store.com')
                 <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info btn-sm view-user-btn" 
+                            data-id="{{ $user->id }}" 
+                            title="View Details">
+                        <i class="bi bi-eye"></i>
+                    </button>
+
                     <form method="POST" action="{{ route('admin.users.toggle', $user->id) }}" class="d-inline">
                         @csrf
                         @method('PATCH')

@@ -4,7 +4,21 @@
 <div class="container py-5">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h2 class="fw-bold mb-0">Order Details</h2>
-        <span class="text-muted">Order ID: #{{ $order->id }}</span>
+        <div class="d-flex align-items-center gap-3">
+             <span class="text-muted me-2">Order ID: #{{ $order->id }}</span>
+             @if(in_array($order->status, ['placed', 'processing']))
+                <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?')">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">Cancel Order</button>
+                </form>
+            @endif
+            @if($order->status == 'delivered')
+                <form action="{{ route('orders.return', $order->id) }}" method="POST" onsubmit="return confirm('Request a return for this order?')">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-bold">Return Order</button>
+                </form>
+            @endif
+        </div>
     </div>
 
     <!-- Tracker -->
@@ -19,6 +33,14 @@
                     <div class="small">This order has been cancelled. Please contact support for help.</div>
                 </div>
             </div>
+        @elseif($order->status == 'returned')
+            <div class="alert alert-secondary d-flex align-items-center mb-0">
+                <i class="fas fa-undo-alt fs-4 me-3"></i>
+                <div>
+                    <div class="fw-bold">Order Returned</div>
+                    <div class="small">This order has been returned and refunded.</div>
+                </div>
+            </div>
         @else
             <div class="position-relative mx-3 my-4">
                 {{-- Progress Bar Background --}}
@@ -30,6 +52,7 @@
                                 'processing' => '33%',
                                 'shipped' => '66%',
                                 'delivered' => '100%',
+                                'return_requested' => '100%',
                                 default => '0%'
                             }
                         }};"></div>
@@ -38,38 +61,38 @@
                 <div class="d-flex justify-content-between position-relative" style="z-index: 2;">
                     {{-- Placed --}}
                     <div class="text-center">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['placed', 'processing', 'shipped', 'delivered', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['placed', 'processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
                             <i class="fas fa-clipboard-list"></i>
                         </div>
-                        <div class="small fw-bold {{ in_array($order->status, ['placed', 'processing', 'shipped', 'delivered', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Placed</div>
+                        <div class="small fw-bold {{ in_array($order->status, ['placed', 'processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Placed</div>
                     </div>
 
                     {{-- Processing --}}
                     <div class="text-center">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['processing', 'shipped', 'delivered', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
                             <i class="fas fa-cogs"></i>
                         </div>
-                        <div class="small fw-bold {{ in_array($order->status, ['processing', 'shipped', 'delivered', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Processing</div>
+                        <div class="small fw-bold {{ in_array($order->status, ['processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Processing</div>
                     </div>
 
                     {{-- Shipped --}}
                     <div class="text-center">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['shipped', 'delivered', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
                             <i class="fas fa-truck"></i>
                         </div>
-                        <div class="small fw-bold {{ in_array($order->status, ['shipped', 'delivered', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Shipped</div>
+                        <div class="small fw-bold {{ in_array($order->status, ['shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Shipped</div>
                     </div>
 
                     {{-- Delivered --}}
                     <div class="text-center">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ $order->status == 'delivered' ? 'bg-success' : 'bg-secondary' }}" 
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['delivered', 'return_requested']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <div class="small fw-bold {{ $order->status == 'delivered' ? 'text-dark' : 'text-muted' }}">Delivered</div>
+                        <div class="small fw-bold {{ in_array($order->status, ['delivered', 'return_requested']) ? 'text-dark' : 'text-muted' }}">Delivered</div>
                     </div>
                 </div>
             </div>
@@ -78,10 +101,13 @@
                 <div class="alert alert-info py-2 small d-inline-block mt-3"><i class="fas fa-info-circle me-1"></i> We are packing your order.</div>
             @elseif($order->status == 'shipped')
                 <div class="alert alert-primary py-2 small d-inline-block mt-3"><i class="fas fa-truck-moving me-1"></i> Your order is on the way!</div>
+            @elseif($order->status == 'return_requested')
+                <div class="alert alert-warning py-2 small d-inline-block mt-3"><i class="fas fa-clock me-1"></i> You have requested a return. Waiting for approval.</div>
             @endif
         @endif
         
-        @if($order->delivery_date && $order->status != 'cancelled' && $order->status != 'delivered')
+
+        @if($order->delivery_date && !in_array($order->status, ['cancelled', 'return_requested', 'returned', 'delivered']))
             <div class="mt-4 pt-3 border-top d-flex align-items-center text-muted">
                 <i class="far fa-calendar-alt me-2 fs-5"></i>
                 <div>

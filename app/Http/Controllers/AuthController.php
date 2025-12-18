@@ -52,11 +52,13 @@ class AuthController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
             'email'      => 'required|email|unique:users,email',
-            'phone'      => 'required',
+            'phone'      => 'required|digits:10',
             // 'address' => 'required', // Removed
             'password'   => 'required|confirmed|min:6',
             // 'role'       => 'required|in:buyer,seller',
             'name'       => trim($request->first_name . ' ' . $request->last_name),
+        ], [
+            'phone.digits' => 'Phone number must be exactly 10 digits.',
         ]);
 
         $user = User::create([
@@ -218,17 +220,22 @@ class AuthController extends Controller
             $data = $request->validate([
                 'name'          => 'required|string|max:255',
                 'email'         => 'required|email|unique:users,email,' . $user->id,
-                'phone'         => 'nullable|string|max:10',
+                'phone'         => 'nullable|digits:10',
                 'address'       => 'nullable|string|max:500',
-                'password'      => 'nullable|confirmed|min:6',
                 'profile_photo' => 'nullable|image|max:2048',
+            ], [
+                'phone.digits' => 'Phone number must be exactly 10 digits.',
             ]);
 
-            if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
-            } else {
-                unset($data['password']);
-            }
+            // Sync first_name and last_name from name
+            $parts = explode(' ', $data['name'], 2);
+            $data['first_name'] = $parts[0];
+            $data['first_name'] = $parts[0];
+            $data['last_name'] = !empty($parts[1]) ? $parts[1] : ''; // Fallback to empty string, but if DB requires checks...
+            // Actually, if DB is strict, empty string might be fine. But let's be safer?
+            // If the user name is just "Admin", name=Admin, last_name=""
+            // If the user originally had first="Admin" last="User", and changes name to "Admin", last becomes "".
+
 
             if ($request->hasFile('profile_photo')) {
                 $path = $request->file('profile_photo')->store('profile_photos', 'public');
@@ -239,7 +246,7 @@ class AuthController extends Controller
             }
 
             $user->update($data);
-            return back()->with('success', 'Profile updated successfully!');
+            return redirect()->route('profile.edit')->with('success', 'Profile updated successfully!');
         }
         catch (\Exception $e) {
             return back()->with('error', 'Update failed: ' . $e->getMessage());

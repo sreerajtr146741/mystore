@@ -49,6 +49,8 @@ class OrderController extends Controller
             'shipped' => Order::where('status', 'shipped')->count(),
             'delivered' => Order::where('status', 'delivered')->count(),
             'cancelled' => Order::where('status', 'cancelled')->count(),
+            'return_requested' => Order::where('status', 'return_requested')->count(),
+            'returned' => Order::where('status', 'returned')->count(),
         ];
 
         return view('admin.orders', compact('orders', 'counts', 'status'));
