@@ -200,9 +200,18 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
+            // Cart Persistence: Capture cart before invalidating session
+            $cart = session('cart', []);
+
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
+            // Restore cart for guest view
+            if (!empty($cart)) {
+                session(['cart' => $cart]);
+            }
+
             return redirect()->route('products.index');
         }
         catch (\Exception $e) {

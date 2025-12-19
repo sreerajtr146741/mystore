@@ -1,32 +1,35 @@
-{{-- resources/views/checkout/index.blade.php --}}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Secure Checkout - MyStore</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root { --primary: #6d28d9; --success: #10b981; }
-        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
-        .checkout-wrapper { max-width: 1100px; margin: 2rem auto; }
-        .card { border: none; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.2); }
-        .price { font-size: 3rem; color: #d32f2f; font-weight: 900; }
-        .btn-pay {
-            background: linear-gradient(135deg, #10b981, #059669);
-            border: none; border-radius: 50px;
-            box-shadow: 0 10px 20px rgba(16,185,129,0.3);
-            transition: transform 0.2s;
-        }
-        .btn-pay:hover { transform: translateY(-2px); }
-        .payment-tab-icon { font-size: 1.8rem; margin-right: 8px; }
-        .credit-card-input { font-family: 'Courier New', monospace; letter-spacing: 6px; font-size: 1.6rem; text-align: center; }
-        .edit-btn { border: none; background: transparent; color: var(--primary); font-weight: 700; }
-        .form-disabled :is(input,select,textarea){ background:#f1f5f9 !important; cursor:not-allowed; }
-    </style>
-</head>
-<body>
+@extends('layouts.master')
+
+@section('title', 'Secure Checkout - MyStore')
+
+@push('styles')
+<style>
+    :root { --primary: #6d28d9; --success: #10b981; }
+    /* Override body background if needed, but master has its own. 
+       Let's keep the gradient for checkout page specifically if desired, 
+       or adhere to master's clean look. Users usually prefer consistent look.
+       Master has #f8f9fa. The checkout had a gradient. 
+       I will keep the checkout specific look for the content area or body. */
+    body { background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); }
+    
+    .checkout-wrapper { max-width: 1100px; margin: 2rem auto; }
+    .card { border: none; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.05); }
+    .price { font-size: 3rem; color: #d32f2f; font-weight: 900; }
+    .btn-pay {
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none; border-radius: 50px;
+        box-shadow: 0 10px 20px rgba(16,185,129,0.3);
+        transition: transform 0.2s;
+    }
+    .btn-pay:hover { transform: translateY(-2px); }
+    .payment-tab-icon { font-size: 1.8rem; margin-right: 8px; }
+    .credit-card-input { font-family: 'Courier New', monospace; letter-spacing: 6px; font-size: 1.6rem; text-align: center; }
+    .edit-btn { border: none; background: transparent; color: var(--primary); font-weight: 700; }
+    .form-disabled :is(input,select,textarea){ background:#f1f5f9 !important; cursor:not-allowed; }
+</style>
+@endpush
+
+@section('content')
 @php
     $items    = $items ?? array_values(session('cart', []));
     $items    = collect($items)->map(function ($it) {
@@ -53,7 +56,7 @@
         <!-- LEFT: Order Summary -->
         <div class="col-lg-7">
             <div class="card h-100">
-                <div class="card-header bg-gradient text-white py-4" style="background: linear-gradient(135deg, #6d28d9,#4c1d95)!important;">
+                <div class="card-header bg-gradient text-white py-4" style="background: linear-gradient(135deg, #87CEEB,#00BFFF)!important;"> {{-- Matching new blue theme --}}
                     <h3 class="mb-0 fw-bold">Order Summary</h3>
                 </div>
                 <div class="card-body p-5">
@@ -244,8 +247,9 @@
         </div>
     </div>
 </div>
+@endsection
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+@push('scripts')
 <script>
     // Payment Method Toggle
     (function() {
@@ -343,5 +347,4 @@
         if (empty) setEditable(true);
     })();
 </script>
-</body>
-</html>
+@endpush

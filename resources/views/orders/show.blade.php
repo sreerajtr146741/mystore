@@ -1,4 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.master')
+
+@section('title', 'Order #'.$order->id.' • MyStore')
 
 @section('content')
 <div class="container py-5">
@@ -27,7 +29,7 @@
         
         @if($order->status == 'cancelled')
             <div class="alert alert-danger d-flex align-items-center mb-0">
-                <i class="fas fa-times-circle fs-4 me-3"></i>
+                <i class="bi bi-x-circle fs-4 me-3"></i>
                 <div>
                     <div class="fw-bold">Order Cancelled</div>
                     <div class="small">This order has been cancelled. Please contact support for help.</div>
@@ -35,7 +37,7 @@
             </div>
         @elseif($order->status == 'returned')
             <div class="alert alert-secondary d-flex align-items-center mb-0">
-                <i class="fas fa-undo-alt fs-4 me-3"></i>
+                <i class="bi bi-arrow-counterclockwise fs-4 me-3"></i>
                 <div>
                     <div class="fw-bold">Order Returned</div>
                     <div class="small">This order has been returned and refunded.</div>
@@ -63,7 +65,7 @@
                     <div class="text-center">
                         <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['placed', 'processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
-                            <i class="fas fa-clipboard-list"></i>
+                            <i class="bi bi-clipboard"></i>
                         </div>
                         <div class="small fw-bold {{ in_array($order->status, ['placed', 'processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Placed</div>
                     </div>
@@ -72,7 +74,7 @@
                     <div class="text-center">
                         <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
-                            <i class="fas fa-cogs"></i>
+                            <i class="bi bi-gear"></i>
                         </div>
                         <div class="small fw-bold {{ in_array($order->status, ['processing', 'shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Processing</div>
                     </div>
@@ -81,7 +83,7 @@
                     <div class="text-center">
                         <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
-                            <i class="fas fa-truck"></i>
+                            <i class="bi bi-truck"></i>
                         </div>
                         <div class="small fw-bold {{ in_array($order->status, ['shipped', 'delivered', 'return_requested', 'out_for_delivery']) ? 'text-dark' : 'text-muted' }}">Shipped</div>
                     </div>
@@ -90,7 +92,7 @@
                     <div class="text-center">
                         <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white {{ in_array($order->status, ['delivered', 'return_requested']) ? 'bg-success' : 'bg-secondary' }}" 
                              style="width: 40px; height: 40px; border: 4px solid #fff; box-shadow: 0 0 0 1px #dee2e6;">
-                            <i class="fas fa-check-circle"></i>
+                            <i class="bi bi-check-circle"></i>
                         </div>
                         <div class="small fw-bold {{ in_array($order->status, ['delivered', 'return_requested']) ? 'text-dark' : 'text-muted' }}">Delivered</div>
                     </div>
@@ -98,18 +100,18 @@
             </div>
 
             @if($order->status == 'processing')
-                <div class="alert alert-info py-2 small d-inline-block mt-3"><i class="fas fa-info-circle me-1"></i> We are packing your order.</div>
+                <div class="alert alert-info py-2 small d-inline-block mt-3"><i class="bi bi-info-circle me-1"></i> We are packing your order.</div>
             @elseif($order->status == 'shipped')
-                <div class="alert alert-primary py-2 small d-inline-block mt-3"><i class="fas fa-truck-moving me-1"></i> Your order is on the way!</div>
+                <div class="alert alert-primary py-2 small d-inline-block mt-3"><i class="bi bi-truck me-1"></i> Your order is on the way!</div>
             @elseif($order->status == 'return_requested')
-                <div class="alert alert-warning py-2 small d-inline-block mt-3"><i class="fas fa-clock me-1"></i> You have requested a return. Waiting for approval.</div>
+                <div class="alert alert-warning py-2 small d-inline-block mt-3"><i class="bi bi-clock me-1"></i> You have requested a return. Waiting for approval.</div>
             @endif
         @endif
         
 
         @if($order->delivery_date && !in_array($order->status, ['cancelled', 'return_requested', 'returned', 'delivered']))
             <div class="mt-4 pt-3 border-top d-flex align-items-center text-muted">
-                <i class="far fa-calendar-alt me-2 fs-5"></i>
+                <i class="bi bi-calendar-event me-2 fs-5"></i>
                 <div>
                     <span class="small text-uppercase fw-bold">Expected Delivery</span><br>
                     <span class="text-dark fw-bold">{{ $order->delivery_date->format('D, d M Y') }}</span>
@@ -127,8 +129,10 @@
                     @foreach($order->items as $item)
                         <div class="d-flex p-3 border-bottom">
                             <div style="width: 80px; height: 80px;" class="flex-shrink-0 bg-light rounded overflow-hidden">
-                                <img src="{{ \Illuminate\Support\Str::startsWith($item->product->image, 'http') ? $item->product->image : asset('storage/'.$item->product->image) }}" 
-                                     class="w-100 h-100 object-fit-cover" alt="Product">
+                                @php
+                                    $image = Illuminate\Support\Str::startsWith($item->product->image, 'http') ? $item->product->image : asset('storage/'.$item->product->image);
+                                @endphp
+                                <img src="{{ $image }}" class="w-100 h-100 object-fit-cover" alt="Product">
                             </div>
                             <div class="ms-3 flex-grow-1">
                                 <h6 class="fw-bold mb-1">{{ $item->product->name }}</h6>

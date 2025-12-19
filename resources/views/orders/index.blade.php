@@ -1,4 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.master')
+
+@section('title', 'My Orders • MyStore')
+
+@push('styles')
+<style>
+    .hover-scale { transition: transform 0.2s; }
+    .hover-scale:hover { transform: translateY(-2px); }
+</style>
+@endpush
 
 @section('content')
 <div class="container py-5">
@@ -8,7 +17,7 @@
             <span class="ms-3 badge bg-primary rounded-pill px-3">{{ $orders->total() }} Orders</span>
         </div>
         <a href="{{ route('products.index') }}" class="btn btn-outline-primary rounded-pill px-4 fw-bold hover-scale">
-            <i class="fas fa-shopping-bag me-2"></i> Continue Shopping
+            <i class="bi bi-bag me-2"></i> Continue Shopping
         </a>
     </div>
     
@@ -17,11 +26,11 @@
     </div>
     
     @if($orders->isEmpty())
-        <div class="text-center py-12 bg-white rounded-4 shadow-sm border border-dashed border-secondary border-opacity-25">
-            <div class="mb-4 text-primary opacity-50 display-1"><i class="fas fa-box-open"></i></div>
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm border border-dashed border-secondary border-opacity-25 mt-4">
+            <div class="mb-4 text-primary opacity-50 display-1"><i class="bi bi-box2"></i></div>
             <h3 class="fw-bold text-gray-800">No orders placed yet</h3>
-            <p class="text-gray-500 mb-4 max-w-sm mx-auto">Looks like you haven't bought anything yet. Explore our products and grab the best deals!</p>
-            <a href="{{ route('products.index') }}" class="btn btn-lg btn-primary rounded-pill px-5 fw-bold shadow-lg hover:shadow-xl transition-all">
+            <p class="text-muted mb-4 mx-auto" style="max-width: 400px;">Looks like you haven't bought anything yet. Explore our products and grab the best deals!</p>
+            <a href="{{ route('products.index') }}" class="btn btn-lg btn-primary rounded-pill px-5 fw-bold shadow hover-scale">
                 Start Shopping Now
             </a>
         </div>
@@ -35,7 +44,9 @@
         </div>
     @endif
 </div>
+@endsection
 
+@push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         let nextPageUrl = "{{ $orders->nextPageUrl() }}";
@@ -87,10 +98,4 @@
         }
     });
 </script>
-</div>
-
-<style>
-    .hover-scale { transition: transform 0.2s; }
-    .hover-scale:hover { transform: translateY(-2px); }
-</style>
-@endsection
+@endpush

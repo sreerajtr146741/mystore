@@ -135,7 +135,8 @@ class CheckoutController extends Controller
                 if ($source === 'checkout_items') {
                     session()->forget('checkout_items');
                 } else {
-                    session()->forget('cart');
+                    // USER REQUEST: Keep items in cart after payment
+                    // session()->forget('cart'); 
                 }
 
                 session()->forget(['discount_percent','discount_amount','coupon_code','free_shipping']);

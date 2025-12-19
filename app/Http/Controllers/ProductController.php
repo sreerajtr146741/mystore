@@ -79,7 +79,22 @@ class ProductController extends Controller
 
             // $product->final_price = $this->calculateFinalPrice($product); // REMOVED: Use Model Accessor
 
-            return view('products.show', compact('product'));
+            // Fetch Similar Products (Same Category, Exclude Current)
+            $similarProducts = Product::where('category', $product->category)
+                ->where('id', '!=', $product->id)
+                ->where(function($q) {
+                    // Respect active status schema
+                    if (Schema::hasColumn('products', 'is_active')) {
+                        $q->where('is_active', true);
+                    } elseif (Schema::hasColumn('products', 'status')) {
+                        $q->where('status', 'active');
+                    }
+                })
+                ->inRandomOrder()
+                ->take(4)
+                ->get();
+
+            return view('products.show', compact('product', 'similarProducts'));
         } catch (\Throwable $e) {
             \Log::error('Product show error: '.$e->getMessage());
             return back()->with('error', 'Unable to load product.');

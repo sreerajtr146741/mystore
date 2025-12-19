@@ -31,6 +31,8 @@ Route::get('/', [ProductController::class, 'index'])->name('products.index');
 */
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::view('/about', 'about')->name('about');
+Route::view('/contact', 'contact')->name('contact');
 
 /*
 |--------------------------------------------------------------------------
