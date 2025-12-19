@@ -187,7 +187,7 @@
     {{-- KPI CARDS — NON-CLICKABLE --}}
     <div class="row g-4 mb-4">
       <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0">
+        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.users') }}'">
           <i class="bi bi-people-fill fs-1 opacity-50"></i>
           <div class="opacity-75 mt-2">Total Users</div>
           <h2 class="fw-bold">{{ $stats['total_users'] ?? 0 }}</h2>
@@ -196,7 +196,7 @@
       </div>
 
       <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0">
+        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.products.list') }}'">
           <i class="bi bi-box-seam fs-1 opacity-50"></i>
           <div class="opacity-75 mt-2">Total Products</div>
           <h2 class="fw-bold">{{ $stats['total_products'] ?? 0 }}</h2>
@@ -205,7 +205,7 @@
       </div>
 
       <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0">
+        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.revenue') }}'">
           <i class="bi bi-currency-rupee fs-1 opacity-50"></i>
           <div class="opacity-75 mt-2">Today's Revenue</div>
           <h2 class="fw-bold">₹{{ number_format($stats['today_revenue'] ?? 0) }}</h2>
@@ -214,7 +214,7 @@
       </div>
 
       <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0">
+        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.orders') }}'">
           <i class="bi bi-receipt fs-1 opacity-50"></i>
           <div class="opacity-75 mt-2">Pending Orders</div>
           <h2 class="fw-bold">{{ $adminExtras['pending_orders'] ?? 0 }}</h2>

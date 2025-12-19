@@ -396,6 +396,28 @@
     showImage(originalSrc);
   });
 
+  });
+
+  // ------- Banner live preview -------
+  const bannerInp = document.getElementById('bannerInput');
+  const bannerPrev = document.getElementById('bannerPreviewEl');
+  const bannerEmpty = document.getElementById('bannerPreviewEmpty');
+
+  bannerInp?.addEventListener('change', function(){
+      const file = this.files && this.files[0];
+      if(!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = e => {
+          if(bannerPrev) {
+             bannerPrev.src = e.target.result;
+             bannerPrev.classList.remove('d-none');
+          }
+          if(bannerEmpty) bannerEmpty.classList.add('d-none');
+      };
+      reader.readAsDataURL(file);
+  });
+
   // ------- Coupons dynamic list -------
   const container = document.getElementById('couponsContainer');
   const addBtn = document.getElementById('addCouponBtn');

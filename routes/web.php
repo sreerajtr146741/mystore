@@ -166,6 +166,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/products', [ProductManageController::class, 'store'])->name('products.store');
     Route::get('/products/{product}/edit', [ProductManageController::class, 'edit'])->name('products.edit');
     Route::put('/products/{product}', [ProductManageController::class, 'update'])->name('products.update');
+    Route::post('/products/{product}/banner', [ProductManageController::class, 'updateBanner'])->name('products.banner.update');
+    Route::delete('/products/banner/{productBanner}', [ProductManageController::class, 'destroyBanner'])->name('products.banner.destroy');
     Route::patch('/products/{product}/toggle', [ProductManageController::class, 'toggleStatus'])->name('products.toggle');
     Route::delete('/products/{product}', [ProductManageController::class, 'destroy'])->name('products.destroy');
 

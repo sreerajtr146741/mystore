@@ -415,6 +415,33 @@
     btnChange.addEventListener('click', () => input.click());
     btnClear.addEventListener('click', clearPreview);
 
+    // ---------- Banner Preview ----------
+    const bannerInput = document.getElementById('bannerInput');
+    const bannerUploader = document.getElementById('bannerUploader');
+    const bannerPreviewWrap = document.getElementById('bannerPreviewWrap');
+    const bannerImgPreview = document.getElementById('bannerImgPreview');
+    const bannerFileMeta = document.getElementById('bannerFileMeta');
+
+    function setBannerPreview(file) {
+      if (!file) return;
+      if (!ALLOWED.includes(file.type)) { alert('Invalid image type'); return; }
+      if (file.size > 5 * 1024 * 1024) { alert('Banner too large. Max 5 MB.'); return; } // 5MB limit for banner
+      
+      const reader = new FileReader();
+      reader.onload = e => {
+        bannerImgPreview.src = e.target.result;
+        bannerPreviewWrap.style.display = 'block';
+        bannerFileMeta.textContent = file.name + ' • ' + humanFileSize(file.size);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    bannerInput?.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if(file) setBannerPreview(file);
+    });
+    bannerUploader?.addEventListener('click', () => bannerInput.click());
+
     // ---------- Description Counter ----------
     const descField = document.getElementById('descField');
     const descCount = document.getElementById('descCount');

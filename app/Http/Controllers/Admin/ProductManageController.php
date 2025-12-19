@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\ProductBanner;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Schema;
@@ -95,9 +96,27 @@ class ProductManageController extends Controller
 
             $allCategories = \App\Models\Category::with('children')->whereNull('parent_id')->get();
 
+            // DATA FOR JS BANNER MODAL (Client-side lookup)
+            $simpleProducts = Product::with('banners')
+                                ->select('id','name') // no select banner collumn
+                                ->orderBy('name')
+                                ->get()
+                                ->map(function($p){
+                                    return [
+                                        'id' => $p->id,
+                                        'name' => $p->name,
+                                        'banners' => $p->banners->map(fn($b) => [
+                                            'id' => $b->id,
+                                            'url' => Storage::url($b->image),
+                                            'start' => $b->start_at,
+                                            'end' => $b->end_at,
+                                        ])
+                                    ];
+                                });
+
             return view('admin.products.manage', compact(
                 'products', 'q', 'status', 'category', 'categories', 'allCategories',
-                'added', 'addedFrom', 'addedTo', 'counts'
+                'added', 'addedFrom', 'addedTo', 'counts', 'simpleProducts'
             ));
 
         } catch (\Exception $e) {
@@ -130,6 +149,7 @@ class ProductManageController extends Controller
             'category_id' => ['nullable','exists:categories,id'],
             'category'    => ['nullable','string','max:100'],
             'image'       => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'banner'      => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'], // Banner rule
             'status'      => ['required', \Illuminate\Validation\Rule::in(['active','draft'])],
         ];
 
@@ -147,6 +167,10 @@ class ProductManageController extends Controller
 
             if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            if ($request->hasFile('banner')) {
+                $data['banner'] = $request->file('banner')->store('products/banners', 'public');
             }
 
             $data['user_id'] = auth()->id();
@@ -202,10 +226,15 @@ class ProductManageController extends Controller
                 'description' => ['nullable','string'],
                 'status'      => ['required', Rule::in(['active','draft'])],
                 'image'       => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+                'banner'      => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
             ]);
 
             if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            if ($request->hasFile('banner')) {
+                $data['banner'] = $request->file('banner')->store('products/banners', 'public');
             }
 
             if ($product->name !== $data['name'] && Schema::hasColumn('products', 'slug')) {
@@ -243,6 +272,52 @@ class ProductManageController extends Controller
 
             \Log::error('Product delete error: '.$e->getMessage());
             return back()->with('error', 'Unable to delete product.');
+        }
+    }
+
+    public function updateBanner(Request $request, Product $product)
+    {
+        $request->validate([
+            'banner'          => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
+            // 'remove_banner' is handled via delete route now
+            'banner_start_at' => ['nullable','date'],
+            'banner_end_at'   => ['nullable','date','after_or_equal:banner_start_at'],
+        ]);
+
+        try {
+            // New Upload
+            if ($request->hasFile('banner')) {
+                $path = $request->file('banner')->store('products/banners', 'public');
+                
+                $product->banners()->create([
+                    'image'      => $path,
+                    'start_at'   => $request->banner_start_at ?: null,
+                    'end_at'     => $request->banner_end_at ?: null,
+                    'sort_order' => 0,
+                ]);
+
+                return redirect()->route('admin.products.list')
+                                 ->with('success', 'New banner added.');
+            }
+
+            return back()->with('warning', 'No image uploaded.');
+
+        } catch (\Exception $e) {
+            \Log::error('Banner add error: '.$e->getMessage());
+            return back()->with('error', 'Failed to add banner: '.$e->getMessage());
+        }
+    }
+
+    public function destroyBanner(ProductBanner $productBanner)
+    {
+        try {
+            if ($productBanner->image) {
+                \Storage::disk('public')->delete($productBanner->image);
+            }
+            $productBanner->delete();
+            return back()->with('success', 'Banner removed.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error removing banner.');
         }
     }
 

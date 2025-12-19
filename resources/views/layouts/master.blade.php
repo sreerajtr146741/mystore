@@ -139,6 +139,18 @@
                 <span class="fw-bold fs-5" style="letter-spacing: -0.5px;">MyStore</span>
             </a>
 
+            <!-- Search Bar (Added) -->
+            <div class="search-bar-container" id="searchBar">
+                 <form action="{{ route('products.index') }}" class="d-flex justify-content-center w-100">
+                     <div class="position-relative" style="width: 100%; max-width: 600px;">
+                        <input type="text" name="search" class="search-input-header" placeholder="Search for products, brands and more" value="{{ request('search') }}">
+                        <button type="submit" class="position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent pe-3 text-primary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                     </div>
+                 </form>
+            </div>
+
             <!-- Links -->
             <nav class="d-flex align-items-center gap-2">
                 <a href="{{ route('products.index') }}" class="nav-link-custom {{ request()->routeIs('products.index') ? 'active' : '' }}">Home</a>
@@ -150,6 +162,10 @@
 
         <!-- Right Side Icons -->
         <div class="right-nav">
+            <button class="right-item icon-btn" onclick="toggleSearch()">
+                <i class="bi bi-search"></i>
+            </button>
+
             <a href="{{ route('cart.index') }}" class="right-item position-relative">
                 <i class="bi bi-bag-fill"></i>
                 @php $cartCount = count(session('cart', [])); @endphp

@@ -42,6 +42,7 @@
         <a href="{{ route('admin.products.edit', $p->id) }}" class="btn btn-edit btn-act">
             Edit
         </a>
+
     </td>
 </tr>
 @empty

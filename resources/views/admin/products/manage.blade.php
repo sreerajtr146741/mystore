@@ -139,6 +139,9 @@ $resolveImg = function($path){
                  <button class="btn btn-success btn-sm control-h rounded-14 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#categoryDiscountModal">
                     <i class="bi bi-percent me-1"></i> Category Discount
                  </button>
+                 <button class="btn btn-warning btn-sm control-h rounded-14 px-3 fw-bold text-dark" onclick="openBannerModal()">
+                    <i class="bi bi-image me-1"></i> Manage Banner
+                 </button>
                  <a href="{{ route('admin.products.create') }}" class="btn btn-add btn-primary text-white text-decoration-none rounded-14 px-3 fw-bold">
                     <i class="bi bi-plus-lg"></i> Add Product
                  </a>
@@ -284,6 +287,152 @@ document.addEventListener('DOMContentLoaded', function () {
     </form>
   </div>
 </div>
+
+{{-- Banner Modal --}}
+<div class="modal fade" id="bannerModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border border-secondary shadow-lg">
+      <div class="modal-header border-bottom border-secondary">
+        <h5 class="modal-title fw-bold">Manage Banners</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="mb-3">
+           <label class="form-label text-muted small">Select Product</label>
+           <select id="bannerProductSelect" class="form-select bg-dark text-white border-secondary" required>
+               <option value="">Choose a product...</option>
+               @foreach($simpleProducts as $sp)
+                   <option value="{{ $sp['id'] }}">{{ $sp['name'] }}</option>
+               @endforeach
+           </select>
+        </div>
+
+        {{-- Banner List --}}
+        <h6 class="text-white-50 small text-uppercase fw-bold mb-2">Existing Banners</h6>
+        <div id="bannerList" class="mb-4">
+            <!-- JS will populate -->
+        </div>
+
+        {{-- Add New Banner Form --}}
+        <h6 class="text-info border-top border-secondary pt-3"><i class="bi bi-plus-circle me-1"></i> Add New Banner</h6>
+        <form method="POST" enctype="multipart/form-data" id="bannerForm">
+            @csrf
+            
+            <div class="mb-3">
+                <label class="form-label">Upload Image</label>
+                <input type="file" name="banner" class="form-control bg-dark text-white border-secondary" accept="image/*" required>
+            </div>
+
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label">Start Date</label>
+                    <input type="datetime-local" name="banner_start_at" id="bannerStart" class="form-control bg-dark text-white border-secondary">
+                </div>
+                <div class="col-6">
+                    <label class="form-label">End Date</label>
+                    <input type="datetime-local" name="banner_end_at" id="bannerEnd" class="form-control bg-dark text-white border-secondary">
+                </div>
+            </div>
+
+            <div class="mt-3 text-end">
+                <button type="button" class="btn btn-outline-light me-2" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary fw-bold" id="saveBannerBtn" disabled>Upload Banner</button>
+            </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Pass PHP data to JS
+    window.simpleProducts = @json($simpleProducts);
+    
+    let bannerChoices = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const sel = document.getElementById('bannerProductSelect');
+        if(sel){
+            bannerChoices = new Choices(sel, {
+                searchEnabled: true,
+                itemSelectText: '',
+                placeholder: true,
+                shouldSort: false, 
+            });
+
+            // On change, populate form
+            sel.addEventListener('change', (e) => {
+                loadProductData(e.target.value);
+            });
+        }
+    });
+
+    function loadProductData(id) {
+        const saveBtn = document.getElementById('saveBannerBtn');
+        const form = document.getElementById('bannerForm');
+        const list = document.getElementById('bannerList');
+        
+        list.innerHTML = ''; // Clear list
+
+        if (!id) {
+            saveBtn.disabled = true;
+            return;
+        }
+
+        const product = window.simpleProducts.find(p => p.id == id);
+        if (!product) return;
+
+        // Set Action
+        form.action = `/admin/products/${id}/banner`;
+        saveBtn.disabled = false;
+
+        // Populate List
+        if (product.banners && product.banners.length > 0) {
+            product.banners.forEach(b => {
+                const item = document.createElement('div');
+                item.className = 'd-flex align-items-center gap-3 mb-2 p-2 border border-secondary rounded bg-glass';
+                item.innerHTML = `
+                    <img src="${b.url}" class="rounded" style="width:60px; height:40px; object-fit:cover;">
+                    <div class="flex-grow-1 small">
+                       <div class="text-white-50">${b.start ? 'Starts: '+b.start.slice(0,10) : 'Always visible'}</div> 
+                       <div class="text-white-50">${b.end   ? 'Ends: '+b.end.slice(0,10)   : ''}</div> 
+                    </div>
+                    <form action="/admin/products/banner/${b.id}" method="POST" onsubmit="return confirm('Delete banner?')">
+                        @csrf 
+                        @method('DELETE')
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                `;
+                // Note: The form inside innerHTML won't work easily because of nesting forms. 
+                // Better approach: separate delete endpoint or just simple link.
+                // We will use a dedicated delete route for specific banner ID.
+                list.appendChild(item);
+            });
+        } else {
+            list.innerHTML = '<div class="text-muted small fst-italic">No active banners.</div>';
+        }
+
+        // Reset inputs
+        document.getElementById('bannerStart').value = '';
+        document.getElementById('bannerEnd').value = '';
+        form.querySelector('input[type="file"]').value = '';
+    }
+
+    function openBannerModal(preselectId) {
+        const modal = new bootstrap.Modal(document.getElementById('bannerModal'));
+        modal.show();
+
+        if (preselectId && bannerChoices) {
+            bannerChoices.setChoiceByValue(preselectId.toString());
+            loadProductData(preselectId);
+        } else if (bannerChoices) {
+             bannerChoices.removeActiveItems();
+             loadProductData(null); 
+        }
+    }
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>

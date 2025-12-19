@@ -50,54 +50,166 @@
 @endpush
 
 @section('content')
-<div class="container py-4">
-    {{-- Hero Removed as per request --}}
+<div class="container-fluid py-4" style="background-color: #f1f3f6;">
+    <div class="row g-3">
+        {{-- Sidebar Filters --}}
+        <div class="col-lg-3 col-xl-2" style="position: sticky; top: 80px; height: fit-content; z-index: 1;">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold">Filters</h5>
+                </div>
+                <div class="card-body p-0">
+                    {{-- Search Filter --}}
+                    <div class="p-3 border-bottom">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3">Search</h6>
+                        <form action="{{ route('products.index') }}" method="GET">
+                            {{-- Removed hidden category input to make sidebar search global per user request --}}
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control form-control-sm" placeholder="Search products..." value="{{ request('search') }}">
+                                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+                            </div>
+                        </form>
+                    </div>
 
-
-    {{-- Advanced Filter --}}
-    <form method="GET" action="{{ route('products.index') }}" class="card search-card shadow p-4">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-6">
-                <input type="text" name="search" class="form-control search-input-page" placeholder="Detailed search..." value="{{ request('search') }}">
-            </div>
-            <div class="col-md-4">
-                <select name="category" class="form-select search-select">
-                    <option value="">All Categories</option>
-                    @foreach(['Mobile Phones','Laptops','Tablets','Smart Watches','Headphones','Cameras','TVs','Gaming','Fashion','Shoes','Bags','Watches','Furniture','Home Decor','Kitchen','Sports','Gym & Fitness','Vehicles','Cars','Bikes','Accessories','Fruits','Vegetables','Groceries','Books','Toys','Other'] as $cat)
-                        <option value="{{ $cat }}" {{ request('category')===$cat ? 'selected' : '' }}>{{ $cat }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-go">Filter</button>
+                    {{-- Categories Filter --}}
+                    <div class="p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="text-uppercase text-muted small fw-bold mb-0">Categories</h6>
+                            @if(request('category'))
+                                <a href="{{ route('products.index') }}" class="small text-decoration-none text-danger">Clear</a>
+                            @endif
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            @foreach(['Mobile Phones','Laptops','Tablets','Smart Watches','Headphones','Cameras','TVs','Gaming','Fashion','Shoes','Bags','Watches','Furniture','Home Decor','Kitchen','Sports','Gym & Fitness','Vehicles','Cars','Bikes','Accessories','Fruits','Vegetables','Groceries','Books','Toys','Other'] as $cat)
+                                <a href="{{ route('products.index', array_merge(request()->except('page'), ['category' => $cat])) }}" 
+                                   class="text-decoration-none {{ request('category') === $cat ? 'fw-bold text-primary' : 'text-dark' }}"
+                                   style="font-size: 0.95rem;">
+                                   <div class="d-flex align-items-center">
+                                       @if(request('category') === $cat)
+                                        <i class="bi bi-check2 me-2"></i>
+                                       @else
+                                        <i class="bi bi-chevron-right me-2 text-muted" style="font-size: 0.75rem;"></i>
+                                       @endif
+                                       {{ $cat }}
+                                   </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </form>
 
-    @if($products->count())
-        <div class="row g-4 mt-1" id="product-grid">
-            @include('partials.product-list', ['products' => $products])
-        </div>
+        {{-- Product Grid --}}
+        <div class="col-lg-9 col-xl-10">
+            
+            {{-- Carousel Slider (Always Visible) --}}
+            <div id="homeCarousel" class="carousel slide mb-4 shadow-sm rounded-4 overflow-hidden" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="0" class="active"></button>
+                    @if(isset($carouselSlides))
+                        @foreach($carouselSlides as $idx => $slide)
+                            <button type="button" data-bs-target="#homeCarousel" data-bs-slide-to="{{ $idx + 1 }}"></button>
+                        @endforeach
+                    @endif
+                </div>
+                <div class="carousel-inner">
+                    {{-- Static Slide 1: Home Banner --}}
+                    <div class="carousel-item active">
+                        <div style="height: 400px; width: 100%;">
+                            <img src="{{ asset('images/banners/home-banner.png') }}" class="d-block w-100 h-100" alt="Super Sale" style="object-fit: cover; object-position: center;">
+                        </div>
+                    </div>
 
-        {{-- Loader for Infinite Scroll --}}
-        <div id="loading-spinner" class="text-center py-4 d-none">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+                    {{-- Dynamic Slides (New Arrivals Style) --}}
+                    @if(isset($carouselSlides))
+                        @foreach($carouselSlides as $slide)
+                            <div class="carousel-item">
+                                <a href="{{ $slide['link'] }}" class="d-block position-relative" style="height: 400px; width: 100%;">
+                                    <img src="{{ $slide['image'] }}" class="d-block w-100 h-100" alt="{{ $slide['title'] }}" style="object-fit: cover; object-position: center;">
+                                    
+                                    {{-- Overlay imitating the previous 'New Arrivals' text --}}
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center text-white" 
+                                         style="background: linear-gradient(90deg, rgba(28,181,224,0.4) 0%, rgba(0,8,81,0.6) 100%);">
+                                        <div class="text-center p-3">
+                                            <h2 class="fw-bold mb-2 text-shadow" style="font-size: 3rem;">New Arrivals</h2>
+                                            <p class="fs-4 mb-0 text-shadow">{{ $slide['title'] }}</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#homeCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#homeCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             </div>
-        </div>
-        
-        {{-- Sentinel --}}
-        <div id="sentinel" style="height: 10px;"></div>
 
-        {{-- Hidden Pagination Data --}}
-        @if($products->hasMorePages())
-            <div id="pagination-data" data-next-url="{{ $products->nextPageUrl() }}" style="display:none;"></div>
-        @endif
-    @else
-        <div class="text-center text-muted py-5">
-            <p class="mt-3">No products found.</p>
+            {{-- Sort Header --}}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body py-2 d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="fw-bold fs-5">MyStore</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="me-2 small fw-bold text-muted">Sort By</span>
+                        <select class="form-select form-select-sm border-0" style="width: auto; font-weight: 500; cursor: pointer;" onchange="updateSort(this.value)">
+                            <option value="relevance" {{ request('sort') == 'relevance' ? 'selected' : '' }}>Relevance</option>
+                            <option value="popularity" {{ request('sort') == 'popularity' ? 'selected' : '' }}>Popularity</option>
+                            <option value="price_low_high" {{ request('sort') == 'price_low_high' ? 'selected' : '' }}>Price -- Low to High</option>
+                            <option value="price_high_low" {{ request('sort') == 'price_high_low' ? 'selected' : '' }}>Price -- High to Low</option>
+                            <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest First</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                function updateSort(value) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('sort', value);
+                    url.searchParams.delete('page'); // Reset to page 1
+                    window.location.href = url.toString();
+                }
+            </script>
+
+            @if($products->count())
+                <div class="row g-2" id="product-grid">
+                     {{-- Using standard card layout, slightly compact for 'shop' feel --}}
+                    @include('partials.product-list', ['products' => $products])
+                </div>
+
+                {{-- Loader for Infinite Scroll --}}
+                <div id="loading-spinner" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                
+                {{-- Sentinel --}}
+                <div id="sentinel" style="height: 10px;"></div>
+
+                {{-- Hidden Pagination Data --}}
+                @if($products->hasMorePages())
+                    <div id="pagination-data" data-next-url="{{ $products->nextPageUrl() }}" style="display:none;"></div>
+                @endif
+            @else
+                <div class="card border-0 shadow-sm py-5 text-center">
+                    <div class="card-body">
+                        <img src="https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/error-no-search-results_2353c5.png" alt="No Results" class="mb-4" style="max-width: 200px;">
+                        <h4>Sorry, no results found!</h4>
+                        <p class="text-muted">Please check the spelling or try searching for something else</p>
+                    </div>
+                </div>
+            @endif
         </div>
-    @endif
+    </div>
 </div>
 @endsection
 

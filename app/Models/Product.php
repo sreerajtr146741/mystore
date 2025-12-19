@@ -20,6 +20,7 @@ class Product extends Model
         'price',
         'category',
         'image',
+        'banner', // Added banner
         'stock',
         'status',
         'slug',
@@ -47,6 +48,8 @@ class Product extends Model
         'is_active'           => 'boolean',
         'discount_starts_at'  => 'datetime',
         'discount_ends_at'    => 'datetime',
+        'banner_start_at'     => 'datetime',
+        'banner_end_at'       => 'datetime',
     ];
 
     /**
@@ -61,6 +64,11 @@ class Product extends Model
     /* =========================
        Relationships
        ========================= */
+    public function banners()
+    {
+        return $this->hasMany(ProductBanner::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

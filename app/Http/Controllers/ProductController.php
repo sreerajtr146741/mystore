@@ -48,20 +48,81 @@ class ProductController extends Controller
             if ($search) {
                 $query->where(function($q) use ($search) {
                     $q->where('name', 'LIKE', '%' . $search . '%')
-                      ->orWhere('description', 'LIKE', '%' . $search . '%');
+                      ->orWhere('description', 'LIKE', '%' . $search . '%')
+                      ->orWhere('category', 'LIKE', '%' . $search . '%');
                 });
             }
 
-            $products = $query->with('linkedCategory')->latest()->paginate(12);
+            // Sorting
+            $sort = $request->query('sort', 'relevance');
+            switch ($sort) {
+                case 'price_low_high':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price_high_low':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'newest':
+                    $query->latest();
+                    break;
+                default: // relevance or popularity
+                    $query->latest();
+                    break;
+            }
 
-            // Removing manual final_price calculation loop as it bypasses Model logic
-            // and logic is now handled centralized in Product::getDiscountedPriceAttribute
+            $products = $query->with('linkedCategory')->paginate(12)->appends($request->all());
+
+            // Removing manual final_price calculation...
 
             if ($request->ajax()) {
                 return view('partials.product-list', compact('products'))->render();
             }
 
-            return view('products.index', compact('products'));
+            // --- CAROUSEL LOGIC ---
+            $carouselSlides = collect();
+            
+            // Always fetch potential banner products
+            $candidates = Product::with('banners')
+                ->where(function($q){
+                    $q->whereNotNull('banner')
+                      ->orWhereHas('banners');
+                })
+                ->get();
+            
+            $now = now();
+                $checkDates = function($s, $e) use ($now) {
+                    if (!$s && !$e) return true;
+                    if ($s && $e) return $now->between($s, $e);
+                    if ($s) return $now->gte($s);
+                    if ($e) return $now->lte($e);
+                    return false;
+                };
+
+                foreach($candidates as $p) {
+                    // Check Legacy
+                    if ($p->banner && $checkDates($p->banner_start_at, $p->banner_end_at)) {
+                        $carouselSlides->push([
+                            'image' => asset('storage/'.$p->banner),
+                            'link'  => route('products.show', $p->id),
+                            'title' => $p->name,
+                            'desc'  => 'Check it out!',
+                        ]);
+                    }
+                    // Check New Banners
+                    foreach($p->banners as $b) {
+                         if ($checkDates($b->start_at, $b->end_at)) {
+                            $carouselSlides->push([
+                                'image' => asset('storage/'.$b->image),
+                                'link'  => route('products.show', $p->id),
+                                'title' => $p->name,
+                                'desc'  => 'New Arrival',
+                            ]);
+                        }
+                    }
+                }
+            
+
+            return view('products.index', compact('products', 'carouselSlides'));
         } catch (\Throwable $e) {
             \Log::error('Product index error: '.$e->getMessage());
             return back()->with('error', 'Unable to load products.');
@@ -78,6 +139,9 @@ class ProductController extends Controller
             }
 
             // $product->final_price = $this->calculateFinalPrice($product); // REMOVED: Use Model Accessor
+
+            // Eager load banners
+            $product->load('banners');
 
             // Fetch Similar Products (Same Category, Exclude Current)
             $similarProducts = Product::where('category', $product->category)

@@ -83,6 +83,87 @@
 
 @section('content')
 <div class="container py-4">
+    @php
+        // Gather all valid banners
+        $validBanners = collect();
+        $now = now();
+
+        // Helper to check standard start/end
+        $checkDates = function($s, $e) use ($now) {
+            if (!$s && !$e) return true; // No dates = always show
+            if ($s && $e) return $now->between($s, $e);
+            if ($s) return $now->gte($s);
+            if ($e) return $now->lte($e);
+            return false;
+        };
+
+        // 1. Legacy Banner
+        if ($p->banner && $checkDates($p->banner_start_at, $p->banner_end_at)) {
+            $validBanners->push(['url' => asset('storage/' . $p->banner), 'id' => 'legacy']);
+        }
+
+        // 2. New Banners
+        foreach($p->banners as $b) {
+            if ($checkDates($b->start_at, $b->end_at)) {
+                $validBanners->push(['url' => asset('storage/' . $b->image), 'id' => $b->id]);
+            }
+        }
+    @endphp
+
+    <!-- DEBUG: Found {{ $validBanners->count() }} valid banners. Total DB banners: {{ $p->banners->count() }} -->
+    
+    {{-- TEMPORARY DEBUGGING BLOCK (Remove after fixing) --}}
+    @if($validBanners->count() == 0 && ($p->banner || $p->banners->count() > 0))
+        <div class="alert alert-warning">
+            <strong>Debug Info (Banner Hidden):</strong><br>
+            Server Time: {{ $now }} ({{ config('app.timezone') }})<br>
+            
+            @if($p->banner)
+                 Ref: Legacy Banner | Dates: {{ $p->banner_start_at }} to {{ $p->banner_end_at }} <br>
+            @endif
+            
+            @foreach($p->banners as $b)
+                Ref: New Banner #{{ $b->id }} | Dates: {{ $b->start_at }} to {{ $b->end_at }} <br>
+            @endforeach
+        </div>
+    @endif
+
+    @if($validBanners->count() > 0)
+        <div class="mb-4 rounded-4 overflow-hidden shadow-sm position-relative">
+            @if($validBanners->count() > 1)
+                {{-- Carousel --}}
+                <div id="productBannerCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        @foreach($validBanners as $key => $ban)
+                            <button type="button" data-bs-target="#productBannerCarousel" 
+                                    data-bs-slide-to="{{ $key }}" 
+                                    class="{{ $loop->first ? 'active' : '' }}" 
+                                    aria-current="{{ $loop->first ? 'true' : 'false' }}"></button>
+                        @endforeach
+                    </div>
+                    <div class="carousel-inner">
+                        @foreach($validBanners as $ban)
+                            <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
+                                <img src="{{ $ban['url'] }}" alt="{{ $p->name }} Banner" class="d-block w-100 object-fit-cover" style="max-height: 400px;">
+                            </div>
+                        @endforeach
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#productBannerCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#productBannerCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            @else
+                {{-- Single --}}
+                 <img src="{{ $validBanners->first()['url'] }}" alt="{{ $p->name }} Banner" class="d-block w-100 object-fit-cover" style="max-height: 400px;">
+            @endif
+        </div>
+    @endif
+
     <div class="hero mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between">
         <h1 class="display-6 fw-bold mb-2 mb-lg-0" style="letter-spacing: -0.03em;">{{ $p->name }}</h1>
         @if($p->category)
