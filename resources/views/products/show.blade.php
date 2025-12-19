@@ -78,6 +78,33 @@
         box-shadow: 0 16px 30px rgba(34,197,94,.4);
         color: #fff !important;
     }
+    .btn-buynow:hover{
+        background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+        transform: translateY(-4px);
+        box-shadow: 0 16px 30px rgba(34,197,94,.4);
+        color: #fff !important;
+    }
+    
+    /* Standard Banner Size - Same as Index */
+    .banner-container {
+        width: 100%;
+        aspect-ratio: 5/1; /* Further reduced height */
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .standard-banner {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center; /* Align to top to keep content visible */
+    }
+
+    @media (max-width: 768px) {
+        .banner-container {
+            aspect-ratio: 2.5/1;
+        }
+    }
 </style>
 @endpush
 
@@ -144,7 +171,9 @@
                     <div class="carousel-inner">
                         @foreach($validBanners as $ban)
                             <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                <img src="{{ $ban['url'] }}" alt="{{ $p->name }} Banner" class="d-block w-100 object-fit-cover" style="max-height: 400px;">
+                                <div class="banner-container">
+                                    <img src="{{ $ban['url'] }}" alt="{{ $p->name }} Banner" class="d-block standard-banner">
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -159,7 +188,9 @@
                 </div>
             @else
                 {{-- Single --}}
-                 <img src="{{ $validBanners->first()['url'] }}" alt="{{ $p->name }} Banner" class="d-block w-100 object-fit-cover" style="max-height: 400px;">
+                 <div class="banner-container">
+                     <img src="{{ $validBanners->first()['url'] }}" alt="{{ $p->name }} Banner" class="d-block standard-banner">
+                 </div>
             @endif
         </div>
     @endif

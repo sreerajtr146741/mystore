@@ -78,6 +78,57 @@ class ProductController extends Controller
                 return view('partials.product-list', compact('products'))->render();
             }
 
+            // --- HOMEPAGE CATEGORIZED LOGIC ---
+            // If no search, no specific category filter, and page 1 (or no page), show categorized view
+            $showCategorized = !$request->has('search') && !$request->has('category') && (!$request->has('page') || $request->query('page') == 1);
+            
+            $latestProducts = collect();
+            $fashionProducts = collect();
+            $vehicleProducts = collect();
+            $fruitProducts = collect();
+
+            if ($showCategorized) {
+                // 1. Latest Products
+                $latestProducts = Product::query()
+                    ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
+                    ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
+                    ->latest()
+                    ->take(8)
+                    ->get();
+                
+                // 2. Fashion (Clothing) - Assuming mapped to 'Fashion'
+                $fashionProducts = Product::query()
+                    ->where(function($q) {
+                        $q->where('category', 'Fashion')
+                          ->orWhere('category', 'Clothing') // In case it exists
+                          ->orWhere('category', 'Shoes')
+                          ->orWhere('category', 'Watches');
+                    })
+                    ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
+                    ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
+                    ->latest()
+                    ->take(8)
+                    ->get();
+
+                // 3. Vehicles
+                $vehicleProducts = Product::query()
+                     ->whereIn('category', ['Vehicles', 'Cars', 'Bikes'])
+                     ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
+                     ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
+                     ->latest()
+                     ->take(8)
+                     ->get();
+
+                // 4. Fruits/Groceries
+                $fruitProducts = Product::query()
+                     ->whereIn('category', ['Fruits', 'Vegetables'])
+                     ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
+                     ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
+                     ->latest()
+                     ->take(8)
+                     ->get();
+            }
+
             // --- CAROUSEL LOGIC ---
             $carouselSlides = collect();
             
@@ -122,7 +173,15 @@ class ProductController extends Controller
                 }
             
 
-            return view('products.index', compact('products', 'carouselSlides'));
+            return view('products.index', compact(
+                'products', 
+                'carouselSlides',
+                'showCategorized',
+                'latestProducts',
+                'fashionProducts',
+                'vehicleProducts',
+                'fruitProducts'
+            ));
         } catch (\Throwable $e) {
             \Log::error('Product index error: '.$e->getMessage());
             return back()->with('error', 'Unable to load products.');

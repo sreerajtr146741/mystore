@@ -46,6 +46,41 @@
     }
     .stock-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:.4rem; }
     .pagination-container{ display:none; }
+    
+    /* Standard Banner Size */
+    .banner-container {
+        width: 100%;
+        aspect-ratio: 5/1; /* Further reduced height (very thin banner) */
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .standard-banner {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center; /* Changed from center to top to handle top-heavy content in short banner */
+    }
+    
+    /* Horizontal Scroll Wrapper */
+    .horizontal-scroll-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;  /* IE 10+ */
+    }
+    .horizontal-scroll-wrapper::-webkit-scrollbar { 
+        display: none; /* Chrome/Safari */
+    }
+    
+    /* Mobile optimization for banners */
+    @media (max-width: 768px) {
+        .banner-container {
+            aspect-ratio: 2.5/1; /* Adjusted for mobile to not be too thin */
+        }
+    }
 </style>
 @endpush
 
@@ -116,8 +151,8 @@
                 <div class="carousel-inner">
                     {{-- Static Slide 1: Home Banner --}}
                     <div class="carousel-item active">
-                        <div style="height: 400px; width: 100%;">
-                            <img src="{{ asset('images/banners/home-banner.png') }}" class="d-block w-100 h-100" alt="Super Sale" style="object-fit: cover; object-position: center;">
+                        <div class="banner-container">
+                            <img src="{{ asset('images/banners/home-banner.png') }}" class="d-block standard-banner" alt="Super Sale">
                         </div>
                     </div>
 
@@ -125,8 +160,8 @@
                     @if(isset($carouselSlides))
                         @foreach($carouselSlides as $slide)
                             <div class="carousel-item">
-                                <a href="{{ $slide['link'] }}" class="d-block position-relative" style="height: 400px; width: 100%;">
-                                    <img src="{{ $slide['image'] }}" class="d-block w-100 h-100" alt="{{ $slide['title'] }}" style="object-fit: cover; object-position: center;">
+                                <a href="{{ $slide['link'] }}" class="d-block position-relative banner-container">
+                                    <img src="{{ $slide['image'] }}" class="d-block standard-banner" alt="{{ $slide['title'] }}">
                                     
                                     {{-- Overlay imitating the previous 'New Arrivals' text --}}
                                     <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center text-white" 
@@ -179,7 +214,64 @@
                 }
             </script>
 
-            @if($products->count())
+            @if(isset($showCategorized) && $showCategorized)
+                {{-- SECTION 1: LATEST PRODUCTS --}}
+                @if($latestProducts->count() > 0)
+                    <div class="d-flex align-items-center justify-content-between mb-3 mt-4">
+                        <h4 class="fw-bold mb-0">Latest Products</h4>
+                    </div>
+                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
+                         @foreach($latestProducts as $p)
+                            <div style="min-width: 280px; width: 280px;">
+                                @include('partials.product-card', ['p' => $p])
+                            </div>
+                         @endforeach
+                    </div>
+                @endif
+
+                {{-- SECTION 2: FASHION --}}
+                @if($fashionProducts->count() > 0)
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h4 class="fw-bold mb-0">Fashion Collection</h4>
+                    </div>
+                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
+                         @foreach($fashionProducts as $p)
+                            <div style="min-width: 280px; width: 280px;">
+                                @include('partials.product-card', ['p' => $p])
+                            </div>
+                         @endforeach
+                    </div>
+                @endif
+
+                {{-- SECTION 3: VEHICLES --}}
+                @if($vehicleProducts->count() > 0)
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h4 class="fw-bold mb-0">Vehicles</h4>
+                    </div>
+                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
+                        @foreach($vehicleProducts as $p)
+                            <div style="min-width: 280px; width: 280px;">
+                                @include('partials.product-card', ['p' => $p])
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+                
+                {{-- SECTION 4: FRUITS --}}
+                @if($fruitProducts->count() > 0)
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h4 class="fw-bold mb-0">Fresh Fruits</h4>
+                    </div>
+                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
+                        @foreach($fruitProducts as $p)
+                            <div style="min-width: 280px; width: 280px;">
+                                @include('partials.product-card', ['p' => $p])
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+            @elseif($products->count())
                 <div class="row g-2" id="product-grid">
                      {{-- Using standard card layout, slightly compact for 'shop' feel --}}
                     @include('partials.product-list', ['products' => $products])

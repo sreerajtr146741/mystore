@@ -154,7 +154,6 @@
             <!-- Links -->
             <nav class="d-flex align-items-center gap-2">
                 <a href="{{ route('products.index') }}" class="nav-link-custom {{ request()->routeIs('products.index') ? 'active' : '' }}">Home</a>
-                <a href="{{ route('products.index') }}" class="nav-link-custom">Shop</a>
                 <a href="{{ route('about') }}" class="nav-link-custom {{ request()->routeIs('about') ? 'active' : '' }}">About</a>
                 <a href="{{ route('contact') }}" class="nav-link-custom {{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
             </nav>
@@ -162,9 +161,7 @@
 
         <!-- Right Side Icons -->
         <div class="right-nav">
-            <button class="right-item icon-btn" onclick="toggleSearch()">
-                <i class="bi bi-search"></i>
-            </button>
+
 
             <a href="{{ route('cart.index') }}" class="right-item position-relative">
                 <i class="bi bi-bag-fill"></i>
