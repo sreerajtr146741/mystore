@@ -80,30 +80,37 @@
                             <div class="small text-muted text-uppercase fw-bold">Total Amount</div>
                             <div class="fs-4 fw-bold text-dark">₹{{ number_format($order->total, 2) }}</div>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-1">
                             @if(in_array($order->status, ['placed', 'processing']))
                                 <form action="{{ route('orders.cancel', $order->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?')">
                                     @csrf
-                                    <button type="submit" class="btn btn-outline-danger rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale" title="Cancel Order">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale" title="Cancel Order">
                                         <i class="fas fa-times-circle"></i> Cancel
                                     </button>
                                 </form>
                             @endif
 
+                            @php
+                                $daysSinceDelivery = $order->updated_at->diffInDays(now());
+                                $canReturn = $daysSinceDelivery <= 7;
+                            @endphp
+
                             @if($order->status == 'delivered')
-                                <form action="{{ route('orders.return', $order->id) }}" method="POST" onsubmit="return confirm('Request a return for this order?')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-warning rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale" title="Return Order">
-                                        <i class="fas fa-undo"></i> Return
-                                    </button>
-                                </form>
-                            
-                                <a href="{{ route('orders.download', $order->id) }}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale" title="Download Invoice">
-                                    <i class="fas fa-file-invoice"></i>
+                                @if($canReturn)
+                                    <form action="{{ route('orders.return', $order->id) }}" method="POST" onsubmit="return confirm('Request a return for this order?')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale" title="Return Order ({{ 7 - $daysSinceDelivery }} days remaining)">
+                                            <i class="fas fa-undo"></i> Return
+                                        </button>
+                                    </form>
+                                @endif
+                                
+                                <a href="{{ route('orders.download', $order->id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale" title="Download Invoice">
+                                    <i class="bi bi-download"></i>
                                 </a>
                             @endif
-                            <a href="{{ route('orders.show', $order->id) }}" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm hover-scale">
-                                View Order <i class="fas fa-arrow-right ms-2"></i>
+                            <a href="{{ route('orders.show', $order->id) }}" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm hover-scale">
+                                View <i class="fas fa-arrow-right ms-1"></i>
                             </a>
                         </div>
                     </div>

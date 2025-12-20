@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @stack('styles')
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; padding-top: 60px; }
         
         /* Blue Header Styles */
         .blue-header {
@@ -22,7 +22,7 @@
             justify-content: center;
             height: 60px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            position: sticky; top: 0; z-index: 1000;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
         }
 
         .nav-container {

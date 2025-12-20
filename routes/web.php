@@ -59,7 +59,9 @@ Route::middleware('auth')->group(function () {
         ->name('checkout.single');
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+    Route::post('/checkout/proceed', [CheckoutController::class, 'proceed'])->name('checkout.proceed');
+    Route::get('/checkout/payment', [CheckoutController::class, 'payment'])->name('checkout.payment');
+    Route::post('/checkout/pay', [CheckoutController::class, 'process'])->name('checkout.process'); // Reused or updated
 
     // Pay Now → Send OTP
     // Pay Now
@@ -69,6 +71,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
     Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
+    
+    // Remove item during checkout (Buy Now support)
+    Route::delete('/checkout/remove/{id}', [CheckoutController::class, 'removeItem'])->name('checkout.remove');
+    Route::post('/checkout/update-qty/{id}', [CheckoutController::class, 'updateQuantity'])->name('checkout.update_qty');
 });
 
 /*

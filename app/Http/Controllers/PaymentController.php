@@ -42,13 +42,15 @@ class PaymentController extends Controller {
         }
         
         // Create Order Immediately
+        $shippingAddress = $request->address ?? auth()->user()->address ?? 'Default Address';
+        
         $order = Order::create([
             'user_id' => auth()->id(),
             'total'   => $total,
             'status'  => 'placed',
             'payment_method' => session('payment_method', 'cod'),
             'payment_status' => 'paid',
-            'shipping_address' => auth()->user()->address ?? 'Default Address',
+            'shipping_address' => $shippingAddress,
             'delivery_date' => now()->addDays(5),
         ]);
 
@@ -58,7 +60,7 @@ class PaymentController extends Controller {
             // Cart: [product_id => [...], ...]
             // Checkout Items: [[id=>..., ...]] (Indexed array of arrays)
             
-            $prodId = $details['id'] ?? $id; // Handle both structures
+            $prodId = $details['product_id'] ?? $details['id'] ?? $id; // Handle both structures
             
             OrderItem::create([
                 'order_id'   => $order->id,

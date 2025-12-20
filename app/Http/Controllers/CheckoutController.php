@@ -37,6 +37,7 @@ class CheckoutController extends Controller
         $subtotal = collect($items)->sum('line_total');
 
         $shipping = ($subtotal > 0 && $subtotal < 300) ? 59.0 : 0.0;
+        $platformFee = ($subtotal > 0) ? 10.0 : 0.0;
 
         $percent      = (float) session('discount_percent', 0);
         $flat         = (float) session('discount_amount', 0);
@@ -55,13 +56,14 @@ class CheckoutController extends Controller
             $discount = $subtotal;
         }
 
-        $total = max(0.0, ($subtotal - $discount) + $shipping);
+        $total = max(0.0, ($subtotal - $discount) + $shipping + $platformFee);
 
         return [
-            'subtotal' => round($subtotal, 2),
-            'shipping' => round($shipping, 2),
-            'discount' => round($discount, 2),
-            'total'    => round($total, 2),
+            'subtotal'     => round($subtotal, 2),
+            'shipping'     => round($shipping, 2),
+            'platform_fee' => round($platformFee, 2),
+            'discount'     => round($discount, 2),
+            'total'        => round($total, 2),
         ];
     }
 
@@ -73,12 +75,13 @@ class CheckoutController extends Controller
             $totals = $this->totals($items);
 
             return view('checkout.index', [
-                'items'    => $items,
-                'subtotal' => $totals['subtotal'],
-                'shipping' => $totals['shipping'],
-                'discount' => $totals['discount'],
-                'total'    => $totals['total'],
-                'coupon'   => session('coupon_code'),
+                'items'        => $items,
+                'subtotal'     => $totals['subtotal'],
+                'shipping'     => $totals['shipping'],
+                'platform_fee' => $totals['platform_fee'],
+                'discount'     => $totals['discount'],
+                'total'        => $totals['total'],
+                'coupon'       => session('coupon_code'),
             ]);
 
         } catch (\Throwable $e) {
@@ -86,6 +89,42 @@ class CheckoutController extends Controller
             Log::error('Checkout index error: '.$e->getMessage());
             return back()->with('error', 'Unable to load checkout.');
         }
+    }
+
+    public function proceed(Request $request)
+    {
+        $data = $request->validate([
+            'full_name' => 'required|string|max:255',
+            'phone'     => 'required|string|max:30',
+            'email'     => 'required|email|max:255',
+            'address'   => 'required|string|max:500',
+        ]);
+
+        // Save address to session for the next step
+        session(['checkout_address' => $data]);
+
+        return redirect()->route('checkout.payment');
+    }
+
+    public function payment()
+    {
+        $items = $this->currentItems();
+        if (empty($items)) {
+            return redirect()->route('products.index');
+        }
+
+        $totals = $this->totals($items);
+
+        return view('checkout.payment', [
+            'items'        => $items,
+            'subtotal'     => $totals['subtotal'],
+            'shipping'     => $totals['shipping'],
+            'platform_fee' => $totals['platform_fee'],
+            'discount'     => $totals['discount'],
+            'total'        => $totals['total'],
+            'address'      => session('checkout_address'),
+            'user'         => auth()->user()
+        ]);
     }
 
     public function process(Request $request)
@@ -99,16 +138,21 @@ class CheckoutController extends Controller
                 return redirect()->route('checkout')->with('error', 'Your cart is empty.');
             }
 
-            $buyer = $request->validate([
-                'full_name' => 'required|string|max:255',
-                'phone'     => 'required|string|max:30',
-                'email'     => 'required|email|max:255',
-                'address'   => 'required|string|max:500',
-            ]);
+            $buyer = session('checkout_address'); // Get from session instead of request validation here
+            if (!$buyer) {
+                 // Fallback validation if session expired or direct hit
+                 $buyer = $request->validate([
+                    'full_name' => 'required|string|max:255',
+                    'phone'     => 'required|string|max:30',
+                    'email'     => 'required|email|max:255',
+                    'address'   => 'required|string|max:500',
+                ]);
+            }
 
             $totals = $this->totals($items);
             $subtotal = $totals['subtotal'];
             $shipping = $totals['shipping'];
+            $platform_fee = $totals['platform_fee'];
             $discount = $totals['discount'];
             $total    = $totals['total'];
 
@@ -121,7 +165,7 @@ class CheckoutController extends Controller
             try {
                 Mail::send(
                     'emails.order_receipt',
-                    compact('buyer','items','subtotal','shipping','discount','total'),
+                    compact('buyer','items','subtotal','shipping','platform_fee','discount','total'),
                     function ($m) use ($toEmail, $toName) {
                         $m->to($toEmail, $toName)->subject('Your MyStore Order Receipt');
                     }
@@ -245,6 +289,78 @@ class CheckoutController extends Controller
         } catch (\Throwable $e) {
             Log::error('Remove coupon error: '.$e->getMessage());
             return back()->with('error', 'Failed to remove coupon.');
+        }
+    }
+
+    public function removeItem(Request $request, $id)
+    {
+        try {
+            // Check where the items are coming from
+            if (session()->has('checkout_items')) {
+                $items = session('checkout_items', []);
+                // checkout_items is an indexed array, need to find by id field
+                $items = array_values(array_filter($items, function($item) use ($id) {
+                    return $item['id'] != $id;
+                }));
+                
+                if (empty($items)) {
+                    session()->forget('checkout_items');
+                    return redirect()->route('products.index')->with('success', 'Item removed. Returning to shop.');
+                }
+                
+                session(['checkout_items' => $items]);
+            } else {
+                // Fallback to removing from cart (associative array keyed by ID)
+                $cart = session('cart', []);
+                if (isset($cart[$id])) {
+                    unset($cart[$id]);
+                    session(['cart' => $cart]);
+                }
+            }
+            
+            return back()->with('success', 'Item removed from checkout.');
+
+        } catch (\Throwable $e) {
+            Log::error('Checkout remove item error: '.$e->getMessage());
+            return back()->with('error', 'Unable to remove item.');
+        }
+    }
+
+    public function updateQuantity(Request $request, $id)
+    {
+        try {
+            $qty = (int)$request->input('qty', 1);
+            if ($qty < 1) $qty = 1;
+
+            if (session()->has('checkout_items')) {
+                $items = session('checkout_items', []);
+                // checkout_items is an indexed array, need to find by id field
+                foreach ($items as $index => $item) {
+                    if (isset($item['id']) && $item['id'] == $id) {
+                        $items[$index]['qty'] = $qty;
+                        break;
+                    }
+                }
+                session(['checkout_items' => $items]);
+            } else {
+                // cart is an associative array keyed by ID
+                $cart = session('cart', []);
+                if (isset($cart[$id])) {
+                    $cart[$id]['qty'] = $qty;
+                    session(['cart' => $cart]);
+                }
+            }
+
+            $currentItems = $this->currentItems();
+            $totals = $this->totals($currentItems);
+
+            return response()->json([
+                'success' => true,
+                'totals'  => $totals
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }
