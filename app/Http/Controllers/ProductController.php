@@ -81,38 +81,24 @@ class ProductController extends Controller
             // --- CAROUSEL LOGIC ---
             $carouselSlides = collect();
             
-            // Always fetch potential banner products
-            $candidates = Product::with('banners')
-                ->where(function($q){
-                    $q->whereNotNull('banner')
-                      ->orWhereHas('banners');
-                })
-                ->get();
-            
-            $now = now();
-                $checkDates = function($s, $e) use ($now) {
-                    if (!$s && !$e) return true;
-                    if ($s && $e) return $now->between($s, $e);
-                    if ($s) return $now->gte($s);
-                    if ($e) return $now->lte($e);
-                    return false;
-                };
-
+            try {
+                // Fetch products with active banners
+                $candidates = Product::with('banners')
+                    ->whereHas('banners')
+                    ->get();
+                
+                $now = now();
+                
                 foreach($candidates as $p) {
-                    // Check Legacy
-                    if ($p->banner && $checkDates($p->banner_start_at, $p->banner_end_at)) {
-                        $carouselSlides->push([
-                            'image' => asset('storage/'.$p->banner),
-                            'link'  => route('products.show', $p->id),
-                            'title' => $p->name,
-                            'desc'  => 'Check it out!',
-                        ]);
-                    }
-                    // Check New Banners
                     foreach($p->banners as $b) {
-                         if ($checkDates($b->start_at, $b->end_at)) {
+                        // Check date validity
+                        $isActive = true;
+                        if ($b->start_at && $now->lt($b->start_at)) $isActive = false;
+                        if ($b->end_at && $now->gt($b->end_at)) $isActive = false;
+
+                        if ($isActive) {
                             $carouselSlides->push([
-                                'image' => asset('storage/'.$b->image),
+                                'image' => \Storage::url($b->image),
                                 'link'  => route('products.show', $p->id),
                                 'title' => $p->name,
                                 'desc'  => 'New Arrival',
@@ -120,6 +106,10 @@ class ProductController extends Controller
                         }
                     }
                 }
+            } catch (\Exception $e) {
+                // redundancy to ensure page loads even if banner fails
+                \Log::error('Carousel error: '.$e->getMessage());
+            }
             
 
             return view('products.index', compact(
@@ -143,8 +133,7 @@ class ProductController extends Controller
 
             // $product->final_price = $this->calculateFinalPrice($product); // REMOVED: Use Model Accessor
 
-            // Eager load banners
-            $product->load('banners');
+
 
             // Fetch Similar Products (Same Category, Exclude Current)
             $similarProducts = Product::where('category', $product->category)
@@ -161,7 +150,20 @@ class ProductController extends Controller
                 ->take(4)
                 ->get();
 
-            return view('products.show', compact('product', 'similarProducts'));
+            // Fetch Random Products (Exclude Current)
+            $randomProducts = Product::where('id', '!=', $product->id)
+                ->where(function($q) {
+                    if (Schema::hasColumn('products', 'is_active')) {
+                        $q->where('is_active', true);
+                    } elseif (Schema::hasColumn('products', 'status')) {
+                        $q->where('status', 'active');
+                    }
+                })
+                ->inRandomOrder()
+                ->take(4)
+                ->get();
+
+            return view('products.show', compact('product', 'similarProducts', 'randomProducts'));
         } catch (\Throwable $e) {
             \Log::error('Product show error: '.$e->getMessage());
             return back()->with('error', 'Unable to load product.');

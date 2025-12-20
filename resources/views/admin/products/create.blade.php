@@ -256,11 +256,7 @@
           </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Highlights</label>
-            <textarea name="highlights" rows="5" class="form-control" placeholder="Fast 1ms Response Time&#10;180Hz Refresh Rate&#10;IPS Panel">{{ old('highlights') }}</textarea>
-            <div class="form-text">Enter one highlight per line. Shown as bullet points.</div>
-        </div>
+
 
         <div class="mb-3">
             <label class="form-label">Specifications</label>
@@ -273,7 +269,7 @@
       <div class="col-12 col-lg-5">
         <div class="section-title">Product Image</div>
 
-        <label class="uploader" id="uploader" for="imageInput">
+        <div class="uploader" id="uploader">
           <input type="file" name="image" id="imageInput" class="d-none" accept="image/png,image/jpeg,image/webp">
           <div class="icon mb-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" fill="currentColor" class="bi bi-cloud-arrow-up text-primary" viewBox="0 0 16 16">
@@ -282,7 +278,7 @@
             </svg>
           </div>
           <div class="help">
-            <strong>Click to upload</strong> or drag & drop<br>
+            <strong>Click to upload product image</strong> or drag & drop<br>
             <span class="small-muted">JPG / PNG / WEBP • up to 2 MB</span>
           </div>
 
@@ -296,13 +292,13 @@
             <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="btnChange">Change</button>
             <button type="button" class="btn btn-outline-danger btn-sm d-none" id="btnClear">Remove</button>
           </div>
-        </label>
+        </div>
 
         <div class="small-muted mt-2">
           Recommended: 1200×1200 px square image, clear background, centered product.
         </div>
 
-        <div class="divider"></div>
+
 
         {{-- COUPONS SECTION --}}
         <div class="section-title d-flex align-items-center justify-content-between">
@@ -395,11 +391,18 @@
 
     input.addEventListener('change', (e) => {
       const file = e.target.files && e.target.files[0];
-      if (file) setPreview(file);
+      if (file) {
+        setPreview(file);
+      } else {
+        clearPreview();
+      }
     });
 
     uploader.addEventListener('click', (e) => {
-      if (e.target === btnClear || e.target === btnChange) return;
+      // Prevent triggering file input if clicking on action buttons or preview itself
+      if (e.target.closest('#btnClear') || e.target.closest('#btnChange')) {
+        return;
+      }
       input.click();
     });
 

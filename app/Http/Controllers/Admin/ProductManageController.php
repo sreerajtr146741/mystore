@@ -96,23 +96,23 @@ class ProductManageController extends Controller
 
             $allCategories = \App\Models\Category::with('children')->whereNull('parent_id')->get();
 
-            // DATA FOR JS BANNER MODAL (Client-side lookup)
+            // DATA FOR JS MODAL - Load banners for management
             $simpleProducts = Product::with('banners')
-                                ->select('id','name') // no select banner collumn
-                                ->orderBy('name')
-                                ->get()
-                                ->map(function($p){
-                                    return [
-                                        'id' => $p->id,
-                                        'name' => $p->name,
-                                        'banners' => $p->banners->map(fn($b) => [
-                                            'id' => $b->id,
-                                            'url' => Storage::url($b->image),
-                                            'start' => $b->start_at,
-                                            'end' => $b->end_at,
-                                        ])
-                                    ];
-                                });
+                ->select('id','name')
+                ->orderBy('name')
+                ->get()
+                ->map(function($p){
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'banners' => $p->banners->map(fn($b) => [
+                            'id' => $b->id,
+                            'url' => Storage::url($b->image),
+                            'start' => $b->start_at ? $b->start_at->format('Y-m-d') : null,
+                            'end' => $b->end_at ? $b->end_at->format('Y-m-d') : null,
+                        ])
+                    ];
+                });
 
             return view('admin.products.manage', compact(
                 'products', 'q', 'status', 'category', 'categories', 'allCategories',
@@ -149,8 +149,8 @@ class ProductManageController extends Controller
             'category_id' => ['nullable','exists:categories,id'],
             'category'    => ['nullable','string','max:100'],
             'image'       => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
-            'banner'      => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'], // Banner rule
             'status'      => ['required', \Illuminate\Validation\Rule::in(['active','draft'])],
+            'specifications'  => ['nullable', 'string'],
         ];
 
         $data = $request->validate($rules);
@@ -169,8 +169,34 @@ class ProductManageController extends Controller
                 $data['image'] = $request->file('image')->store('products', 'public');
             }
 
-            if ($request->hasFile('banner')) {
-                $data['banner'] = $request->file('banner')->store('products/banners', 'public');
+
+
+
+
+            // Parse Specifications (Format: Category | Key : Value)
+            if (!empty($data['specifications'])) {
+                $specs = [];
+                $lines = preg_split('/\r\n|\r|\n/', $data['specifications']);
+                foreach($lines as $line) {
+                    if (empty(trim($line))) continue;
+                    
+                    $category = 'General';
+                    $content = $line;
+                    
+                    if (str_contains($line, '|')) {
+                        [$cat, $rest] = explode('|', $line, 2);
+                        $category = trim($cat);
+                        $content = trim($rest);
+                    }
+                    
+                    if (str_contains($content, ':')) {
+                        [$key, $val] = explode(':', $content, 2);
+                        $specs[$category][] = ['key' => trim($key), 'value' => trim($val)];
+                    }
+                }
+                $data['specifications'] = $specs;
+            } else {
+                $data['specifications'] = [];
             }
 
             $data['user_id'] = auth()->id();
@@ -226,15 +252,41 @@ class ProductManageController extends Controller
                 'description' => ['nullable','string'],
                 'status'      => ['required', Rule::in(['active','draft'])],
                 'image'       => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
-                'banner'      => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
+                'specifications'  => ['nullable', 'string'],
             ]);
 
             if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('products', 'public');
             }
 
-            if ($request->hasFile('banner')) {
-                $data['banner'] = $request->file('banner')->store('products/banners', 'public');
+
+
+
+
+            // Parse Specifications (Format: Category | Key : Value)
+            if (!empty($data['specifications'])) {
+                $specs = [];
+                $lines = preg_split('/\r\n|\r|\n/', $data['specifications']);
+                foreach($lines as $line) {
+                    if (empty(trim($line))) continue;
+                    
+                    $category = 'General';
+                    $content = $line;
+                    
+                    if (str_contains($line, '|')) {
+                        [$cat, $rest] = explode('|', $line, 2);
+                        $category = trim($cat);
+                        $content = trim($rest);
+                    }
+                    
+                    if (str_contains($content, ':')) {
+                        [$key, $val] = explode(':', $content, 2);
+                        $specs[$category][] = ['key' => trim($key), 'value' => trim($val)];
+                    }
+                }
+                $data['specifications'] = $specs;
+            } else {
+                $data['specifications'] = [];
             }
 
             if ($product->name !== $data['name'] && Schema::hasColumn('products', 'slug')) {
@@ -275,36 +327,32 @@ class ProductManageController extends Controller
         }
     }
 
-    public function updateBanner(Request $request, Product $product)
+    /* ---------- Banner Management ---------- */
+    public function uploadBanner(Request $request, Product $product)
     {
         $request->validate([
-            'banner'          => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
-            // 'remove_banner' is handled via delete route now
-            'banner_start_at' => ['nullable','date'],
-            'banner_end_at'   => ['nullable','date','after_or_equal:banner_start_at'],
+            'banner'      => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'start_at'    => ['nullable', 'date'],
+            'end_at'      => ['nullable', 'date', 'after_or_equal:start_at'],
+            'sort_order'  => ['nullable', 'integer'],
         ]);
 
         try {
-            // New Upload
-            if ($request->hasFile('banner')) {
-                $path = $request->file('banner')->store('products/banners', 'public');
-                
-                $product->banners()->create([
-                    'image'      => $path,
-                    'start_at'   => $request->banner_start_at ?: null,
-                    'end_at'     => $request->banner_end_at ?: null,
-                    'sort_order' => 0,
-                ]);
+            $path = $request->file('banner')->store('products/banners', 'public');
+            
+            $product->banners()->create([
+                'image'      => $path,
+                'start_at'   => $request->start_at ?: null,
+                'end_at'     => $request->end_at ?: null,
+                'sort_order' => $request->sort_order ?? 0,
+            ]);
 
-                return redirect()->route('admin.products.list')
-                                 ->with('success', 'New banner added.');
-            }
-
-            return back()->with('warning', 'No image uploaded.');
+            return redirect()->route('admin.products.list')
+                             ->with('success', 'Banner uploaded successfully.');
 
         } catch (\Exception $e) {
-            \Log::error('Banner add error: '.$e->getMessage());
-            return back()->with('error', 'Failed to add banner: '.$e->getMessage());
+            \Log::error('Banner upload error: '.$e->getMessage());
+            return back()->with('error', 'Failed to upload banner: '.$e->getMessage());
         }
     }
 
@@ -315,9 +363,11 @@ class ProductManageController extends Controller
                 \Storage::disk('public')->delete($productBanner->image);
             }
             $productBanner->delete();
-            return back()->with('success', 'Banner removed.');
+            
+            return back()->with('success', 'Banner deleted successfully.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error removing banner.');
+            \Log::error('Banner delete error: '.$e->getMessage());
+            return back()->with('error', 'Failed to delete banner.');
         }
     }
 

@@ -24,11 +24,7 @@
     // Gallery Images (Main + Banners as gallery for now)
     $gallery = collect();
     if($p->image) $gallery->push($img($p->image));
-    if($p->banners) {
-        foreach($p->banners as $b) {
-            $gallery->push($img($b->image));
-        }
-    }
+
     // If no images at all
     if($gallery->isEmpty()) $gallery->push(asset('images/placeholder.png')); // simplified
     
@@ -40,7 +36,7 @@
     .product-container { background: #fff; padding: 16px; box-shadow: 0 1px 1px 0 rgba(0,0,0,.16); }
     
     /* Left Column */
-    .left-col { position: sticky; top: 20px; }
+    .left-col { position: sticky; top: 80px; align-self: flex-start; }
     .gallery-wrapper { display: flex; flex-direction: row; gap: 10px; }
     .thumbnails { display: flex; flex-direction: column; gap: 5px; width: 64px; }
     .thumb-box { 
@@ -57,7 +53,7 @@
     }
     .main-image-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
     
-    .action-btns { margin-top: 15px; display: flex; gap: 10px; }
+    .action-btns { margin-top: 0; display: flex; gap: 10px; }
     .btn-fk { 
         flex: 1; padding: 18px 8px; border: none; color: #fff; 
         font-weight: 600; font-size: 16px; border-radius: 2px; 
@@ -95,6 +91,9 @@
     .section-head { font-size: 16px; font-weight: 500; color: #212121; display: flex; width: 110px; flex-shrink: 0; }
     .row-section { display: flex; margin-top: 24px; }
     .row-content { flex-grow: 1; }
+    
+    .product-card-hover { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .product-card-hover:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #2874f0 !important; }
     
     .highlights-list { list-style: none; padding: 0; font-size: 14px; color: #212121; margin: 0; }
     .highlights-list li { margin-bottom: 5px; display: flex; gap: 8px; }
@@ -138,10 +137,7 @@
                     
                     {{-- Main Image --}}
                     <div class="main-image-box">
-                        {{-- Wishlist Icon (decorative) --}}
-                        <div class="position-absolute top-0 end-0 p-3">
-                            <i class="bi bi-heart-fill text-secondary fs-4" style="opacity: 0.3;"></i>
-                        </div>
+                        {{-- Wishlist Icon removed --}}
                         <img id="mainImage" src="{{ $mainImage }}" alt="{{ $p->name }}">
                     </div>
                 </div>
@@ -202,9 +198,9 @@
             <div class="mb-3">
                 <div class="fw-bold fs-6 mb-2">Available offers</div>
                 <ul class="offers-list">
-                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Bank Offer</strong> 5% Unlimited Cashback on Flipkart Axis Bank Credit Card <a href="#" class="text-primary text-decoration-none">T&C</a></span></li>
-                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Bank Offer</strong> 10% off on SBI Credit Card, up to ₹1,500. On orders of ₹5,000 and above <a href="#" class="text-primary text-decoration-none">T&C</a></span></li>
-                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Partner Offer</strong> Sign up for Flipkart Pay Later and get Flipkart Gift Card worth up to ₹500* <a href="#" class="text-primary text-decoration-none">Know More</a></span></li>
+                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Bank Offer</strong> 5% Unlimited Cashback on Axis Bank Credit Card</span></li>
+                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Bank Offer</strong> 10% off on SBI Credit Card, up to ₹1,500. On orders of ₹5,000</span></li>
+                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Partner Offer</strong> Sign up for Pay Later and get Gift Card worth up to ₹500*</span></li>
                 </ul>
             </div>
 
@@ -219,19 +215,7 @@
                 </div>
             </div>
 
-            {{-- Highlights --}}
-            @if(!empty($p->highlights))
-            <div class="row-section">
-                <div class="section-head text-secondary">Highlights</div>
-                <div class="row-content">
-                    <ul class="highlights-list">
-                        @foreach($p->highlights as $hl)
-                            <li>{{ $hl }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-            @endif
+
 
             {{-- Description --}}
             @if($p->description)
@@ -272,12 +256,48 @@
             <div class="row g-3">
             @foreach($similarProducts as $sp)
                 <div class="col-6 col-md-3">
-                     <div class="p-2 border rounded text-center h-100">
-                         <a href="{{ route('products.show', $sp->id) }}" class="text-decoration-none text-dark">
-                             <img src="{{ $img($sp->image) }}" class="img-fluid mb-2" style="max-height: 150px;">
+                     <div class="p-2 border rounded text-center h-100 product-card-hover d-flex flex-column">
+                         <a href="{{ route('products.show', $sp->id) }}" class="text-decoration-none text-dark flex-grow-1">
+                             <img src="{{ $img($sp->image) }}" class="img-fluid mb-2" style="max-height: 150px; object-fit: contain;">
                              <div class="text-truncate fw-medium">{{ $sp->name }}</div>
                              <div class="text-success fw-bold">₹{{ number_format($sp->final_price ?? $sp->price, 0) }}</div>
                          </a>
+                         <div class="d-flex gap-1 mt-2 pt-2 border-top">
+                             <form action="{{ route('cart.add', $sp->id) }}" method="POST" class="flex-fill">
+                                 @csrf
+                                 <input type="hidden" name="qty" value="1">
+                                 <button class="btn btn-sm btn-warning w-100 text-white px-1" style="font-size: 0.75rem; white-space: nowrap;">Add to Cart</button>
+                             </form>
+                             <a href="{{ route('checkout.single', $sp->id) }}" class="btn btn-sm btn-danger flex-fill px-1" style="background:#fb641b; border:none; font-size: 0.75rem; white-space: nowrap;">Buy Now</a>
+                         </div>
+                     </div>
+                </div>
+            @endforeach
+            </div>
+        </div>
+    @endif
+
+    {{-- Random Products --}}
+    @if(isset($randomProducts) && $randomProducts->count() > 0)
+        <div class="card mt-2 border-0 shadow-sm p-3">
+            <h5 class="fw-bold mb-3">You May Also Like</h5>
+            <div class="row g-3">
+            @foreach($randomProducts as $rp)
+                <div class="col-6 col-md-3">
+                     <div class="p-2 border rounded text-center h-100 product-card-hover d-flex flex-column">
+                         <a href="{{ route('products.show', $rp->id) }}" class="text-decoration-none text-dark flex-grow-1">
+                             <img src="{{ $img($rp->image) }}" class="img-fluid mb-2" style="max-height: 150px; object-fit: contain;">
+                             <div class="text-truncate fw-medium">{{ $rp->name }}</div>
+                             <div class="text-success fw-bold">₹{{ number_format($rp->final_price ?? $rp->price, 0) }}</div>
+                         </a>
+                         <div class="d-flex gap-1 mt-2 pt-2 border-top">
+                             <form action="{{ route('cart.add', $rp->id) }}" method="POST" class="flex-fill">
+                                 @csrf
+                                 <input type="hidden" name="qty" value="1">
+                                 <button class="btn btn-sm btn-warning w-100 text-white px-1" style="font-size: 0.75rem; white-space: nowrap;">Add to Cart</button>
+                             </form>
+                             <a href="{{ route('checkout.single', $rp->id) }}" class="btn btn-sm btn-danger flex-fill px-1" style="background:#fb641b; border:none; font-size: 0.75rem; white-space: nowrap;">Buy Now</a>
+                         </div>
                      </div>
                 </div>
             @endforeach

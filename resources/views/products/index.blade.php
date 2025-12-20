@@ -150,14 +150,7 @@
                                 <a href="{{ $slide['link'] }}" class="d-block position-relative banner-container">
                                     <img src="{{ $slide['image'] }}" class="d-block standard-banner" alt="{{ $slide['title'] }}">
                                     
-                                    {{-- Overlay imitating the previous 'New Arrivals' text --}}
-                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center text-white" 
-                                         style="background: linear-gradient(90deg, rgba(28,181,224,0.4) 0%, rgba(0,8,81,0.6) 100%);">
-                                        <div class="text-center p-3">
-                                            <h2 class="fw-bold mb-2 text-shadow" style="font-size: 3rem;">New Arrivals</h2>
-                                            <p class="fs-4 mb-0 text-shadow">{{ $slide['title'] }}</p>
-                                        </div>
-                                    </div>
+
                                 </a>
                             </div>
                         @endforeach

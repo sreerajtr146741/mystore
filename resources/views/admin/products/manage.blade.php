@@ -327,11 +327,11 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="row g-2">
                 <div class="col-6">
                     <label class="form-label">Start Date</label>
-                    <input type="datetime-local" name="banner_start_at" id="bannerStart" class="form-control bg-dark text-white border-secondary">
+                    <input type="datetime-local" name="start_at" id="bannerStart" class="form-control bg-dark text-white border-secondary">
                 </div>
                 <div class="col-6">
                     <label class="form-label">End Date</label>
-                    <input type="datetime-local" name="banner_end_at" id="bannerEnd" class="form-control bg-dark text-white border-secondary">
+                    <input type="datetime-local" name="end_at" id="bannerEnd" class="form-control bg-dark text-white border-secondary">
                 </div>
             </div>
 

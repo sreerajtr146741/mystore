@@ -130,7 +130,6 @@
       </div>
 
       @php
-          $highlightsText = implode("\n", $product->highlights ?? []);
           $specsText = "";
           if(!empty($product->specifications)) {
               foreach($product->specifications as $cat => $items) {
@@ -140,13 +139,6 @@
               }
           }
       @endphp
-
-      {{-- HIGHLIGHTS --}}
-      <div class="mb-3">
-        <label>Highlights</label>
-        <textarea name="highlights" rows="5" class="form-control" placeholder="Fast 1ms Response Time&#10;180Hz Refresh Rate">{{ old('highlights', $highlightsText) }}</textarea>
-        <div class="muted small mt-1">One highlight per line.</div>
-      </div>
 
       {{-- SPECIFICATIONS --}}
       <div class="mb-3">
@@ -424,25 +416,7 @@
 
   });
 
-  // ------- Banner live preview -------
-  const bannerInp = document.getElementById('bannerInput');
-  const bannerPrev = document.getElementById('bannerPreviewEl');
-  const bannerEmpty = document.getElementById('bannerPreviewEmpty');
 
-  bannerInp?.addEventListener('change', function(){
-      const file = this.files && this.files[0];
-      if(!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = e => {
-          if(bannerPrev) {
-             bannerPrev.src = e.target.result;
-             bannerPrev.classList.remove('d-none');
-          }
-          if(bannerEmpty) bannerEmpty.classList.add('d-none');
-      };
-      reader.readAsDataURL(file);
-  });
 
   // ------- Coupons dynamic list -------
   const container = document.getElementById('couponsContainer');

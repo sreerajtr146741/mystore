@@ -20,7 +20,6 @@ class Product extends Model
         'price',
         'category',
         'image',
-        'banner', // Added banner
         'stock',
         'status',
         'slug',
@@ -35,7 +34,6 @@ class Product extends Model
 
         // ADD:
         'category_id',
-        'highlights',
         'specifications',
     ];
 
@@ -50,12 +48,9 @@ class Product extends Model
         'is_discount_active'  => 'boolean',
         'is_active'           => 'boolean',
         'images'              => 'array',
-        'highlights'          => 'array',
         'specifications'      => 'array',
         'discount_starts_at'  => 'datetime',
         'discount_ends_at'    => 'datetime',
-        'banner_start_at'     => 'datetime',
-        'banner_end_at'       => 'datetime',
     ];
 
     /**
@@ -70,10 +65,7 @@ class Product extends Model
     /* =========================
        Relationships
        ========================= */
-    public function banners()
-    {
-        return $this->hasMany(ProductBanner::class)->orderBy('sort_order')->orderBy('id');
-    }
+
 
     public function user()
     {
@@ -85,6 +77,14 @@ class Product extends Model
     {
         // Uses 'category_id' FK, adjusts automatically if null
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    /**
+     * Product can have multiple banners
+     */
+    public function banners()
+    {
+        return $this->hasMany(ProductBanner::class)->orderBy('sort_order')->orderBy('id');
     }
 
 
