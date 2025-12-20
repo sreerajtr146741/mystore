@@ -34,7 +34,7 @@ class OrderStatusUpdated extends Mailable
     }
 
     /**
-     * Get the message content definition.
+    Get the message content definition.
      */
     public function content(): Content
     {

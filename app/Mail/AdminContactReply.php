@@ -17,7 +17,7 @@ class AdminContactReply extends Mailable
     public $subjectLine;
 
     /**
-     * Create a new message instance.
+    Create a new message instance.
      */
     public function __construct($replyMessage, $subjectLine)
     {

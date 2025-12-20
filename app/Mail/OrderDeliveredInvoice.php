@@ -18,7 +18,7 @@ class OrderDeliveredInvoice extends Mailable
     protected $pdfContent;
 
     /**
-     * Create a new message instance.
+    Create a new message instance.
      */
     public function __construct($order, $pdfContent)
     {

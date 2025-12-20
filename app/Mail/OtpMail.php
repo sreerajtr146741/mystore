@@ -49,7 +49,7 @@ class OtpMail extends Mailable
     }
 
     /**
-     * Get the attachments for the message.
+     Get the attachments for the message.
      */
     public function attachments(): array
     {
