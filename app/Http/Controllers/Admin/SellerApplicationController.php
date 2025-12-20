@@ -16,7 +16,7 @@ class SellerApplicationController extends Controller
 
         } catch (\Throwable $e) {
 
-            \Log::error('SellerApplication index error: '.$e->getMessage());
+            \Log::error('SellerApplication index error : '.$e->getMessage());
 
             return back()->with('error', 'Unable to load seller applications.');
         }

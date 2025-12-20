@@ -44,7 +44,7 @@ class DiscountController extends Controller
             Setting::set('discount.global.starts_at', $data['starts'] ?? null);
             Setting::set('discount.global.ends_at', $data['ends'] ?? null);
 
-            return back()->with('success', 'Storewide discount updated.');
+            return back()->with('success', 'Store wide discount updated.');
 
         } catch (\Exception $e) {
 

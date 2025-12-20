@@ -43,7 +43,7 @@ class UserController extends Controller
     {
         $user = User::withCount('products')->findOrFail($id);
         
-        // Calculate total spent if orders relationship exists, else 0
+         // Calculate total spent if orders relationship exists, else 0
         // Provided generic stats
         return response()->json([
             'id' => $user->id,

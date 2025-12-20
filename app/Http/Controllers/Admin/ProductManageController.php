@@ -96,7 +96,7 @@ class ProductManageController extends Controller
 
             $allCategories = \App\Models\Category::with('children')->whereNull('parent_id')->get();
 
-            // DATA FOR JS MODAL - Load banners for management
+                // DATA FOR JS MODAL - Load banners for management
             $simpleProducts = Product::with('banners')
                 ->select('id','name')
                 ->orderBy('name')

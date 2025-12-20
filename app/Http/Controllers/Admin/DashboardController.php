@@ -4,27 +4,38 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\SellerApplication;
+use Exception;
+use Log;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         try {
+            // Collect dashboard statistics
             $stats = [
-                'total_users' => \App\Models\User::count(),
-                'sellers' => \App\Models\User::where('role', 'seller')->count(),
-                'pending_apps' => \App\Models\SellerApplication::where('status', 'pending')->count(),
+                'total_users'  => User::count(),
+                'sellers'      => User::where('role', 'seller')->count(),
+                'pending_apps' => SellerApplication::where('status', 'pending')->count(),
             ];
 
+            // Load dashboard view
             return view('admin.manage', compact('stats'));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
 
-            // You can log the error
-            \Log::error('Dashboard load failed: '.$e->getMessage());
+            // Log error for debugging
+            Log::error('Dashboard load failed', [
+                'error' => $e->getMessage(),
+            ]);
 
-            // Return fallback view or redirect with error message
-            return back()->with('error', 'Unable to load Dashboard. Please try again.');
+            // Show friendly error message
+            return back()->with(
+                'error',
+                'Unable to load Dashboard. Please try again.'
+            );
         }
     }
 }
