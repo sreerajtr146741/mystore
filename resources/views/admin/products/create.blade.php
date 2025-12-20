@@ -248,12 +248,24 @@
 
         <div class="mb-2">
           <label class="form-label">Description</label>
-          <textarea name="description" rows="6" class="form-control" id="descField"
+          <textarea name="description" rows="5" class="form-control" id="descField"
                     placeholder="Short overview, key features, warranty, etc.">{{ old('description') }}</textarea>
           <div class="d-flex justify-content-between mt-1">
-            <div class="small-muted">Tip: Use bullet points for features.</div>
+            <div class="small-muted">Brief overview.</div>
             <div class="small-muted" id="descCount">0 characters</div>
           </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Highlights</label>
+            <textarea name="highlights" rows="5" class="form-control" placeholder="Fast 1ms Response Time&#10;180Hz Refresh Rate&#10;IPS Panel">{{ old('highlights') }}</textarea>
+            <div class="form-text">Enter one highlight per line. Shown as bullet points.</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Specifications</label>
+            <textarea name="specifications" rows="8" class="form-control" style="font-family:monospace" placeholder="General | Brand : MSI&#10;General | Model : MAG274QRFW&#10;Display | Screen Size : 27 inch&#10;Display | Resolution : 2560 x 1440">{{ old('specifications') }}</textarea>
+            <div class="form-text">Format: <code>Category | Key : Value</code>. Put each spec on a new line.</div>
         </div>
       </div>
 

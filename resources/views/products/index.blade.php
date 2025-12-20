@@ -62,19 +62,6 @@
         object-position: top center; /* Changed from center to top to handle top-heavy content in short banner */
     }
     
-    /* Horizontal Scroll Wrapper */
-    .horizontal-scroll-wrapper {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none;  /* IE 10+ */
-    }
-    .horizontal-scroll-wrapper::-webkit-scrollbar { 
-        display: none; /* Chrome/Safari */
-    }
-    
     /* Mobile optimization for banners */
     @media (max-width: 768px) {
         .banner-container {
@@ -214,64 +201,7 @@
                 }
             </script>
 
-            @if(isset($showCategorized) && $showCategorized)
-                {{-- SECTION 1: LATEST PRODUCTS --}}
-                @if($latestProducts->count() > 0)
-                    <div class="d-flex align-items-center justify-content-between mb-3 mt-4">
-                        <h4 class="fw-bold mb-0">Latest Products</h4>
-                    </div>
-                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
-                         @foreach($latestProducts as $p)
-                            <div style="min-width: 280px; width: 280px;">
-                                @include('partials.product-card', ['p' => $p])
-                            </div>
-                         @endforeach
-                    </div>
-                @endif
-
-                {{-- SECTION 2: FASHION --}}
-                @if($fashionProducts->count() > 0)
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h4 class="fw-bold mb-0">Fashion Collection</h4>
-                    </div>
-                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
-                         @foreach($fashionProducts as $p)
-                            <div style="min-width: 280px; width: 280px;">
-                                @include('partials.product-card', ['p' => $p])
-                            </div>
-                         @endforeach
-                    </div>
-                @endif
-
-                {{-- SECTION 3: VEHICLES --}}
-                @if($vehicleProducts->count() > 0)
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h4 class="fw-bold mb-0">Vehicles</h4>
-                    </div>
-                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
-                        @foreach($vehicleProducts as $p)
-                            <div style="min-width: 280px; width: 280px;">
-                                @include('partials.product-card', ['p' => $p])
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-                
-                {{-- SECTION 4: FRUITS --}}
-                @if($fruitProducts->count() > 0)
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h4 class="fw-bold mb-0">Fresh Fruits</h4>
-                    </div>
-                    <div class="horizontal-scroll-wrapper gap-3 pb-2 mb-5">
-                        @foreach($fruitProducts as $p)
-                            <div style="min-width: 280px; width: 280px;">
-                                @include('partials.product-card', ['p' => $p])
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-            @elseif($products->count())
+            @if($products->count())
                 <div class="row g-2" id="product-grid">
                      {{-- Using standard card layout, slightly compact for 'shop' feel --}}
                     @include('partials.product-list', ['products' => $products])

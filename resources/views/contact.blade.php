@@ -48,39 +48,58 @@
                     <p class="text-muted small">We typically reply within 24 hours.</p>
                 </div>
                 <div class="card-body p-4">
-                    <form onsubmit="event.preventDefault(); alert('Message sent successfully! (Demo)');">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
+                    @if($errors->any())
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
+                    <form action="{{ route('contact.store') }}" method="POST">
+                        @csrf
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">First Name</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i class="bi bi-person"></i></span>
-                                    <input type="text" class="form-control bg-light border-0 py-2" required placeholder="John">
+                                    <input type="text" name="first_name" class="form-control bg-light border-0 py-2" required placeholder="John" value="{{ old('first_name') }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Last Name</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i class="bi bi-person"></i></span>
-                                    <input type="text" class="form-control bg-light border-0 py-2" required placeholder="Doe">
+                                    <input type="text" name="last_name" class="form-control bg-light border-0 py-2" required placeholder="Doe" value="{{ old('last_name') }}">
                                 </div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">Email Address</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i class="bi bi-envelope"></i></span>
-                                    <input type="email" class="form-control bg-light border-0 py-2" required placeholder="john@example.com">
+                                    <input type="email" name="email" class="form-control bg-light border-0 py-2" required placeholder="john@example.com" value="{{ old('email') }}">
                                 </div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">Subject</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i class="bi bi-chat-dots"></i></span>
-                                    <input type="text" class="form-control bg-light border-0 py-2" required placeholder="Order #12345">
+                                    <input type="text" name="subject" class="form-control bg-light border-0 py-2" required placeholder="Order #12345" value="{{ old('subject') }}">
                                 </div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-bold text-muted">Message</label>
-                                <textarea class="form-control bg-light border-0 p-3" rows="5" required placeholder="How can we help you?"></textarea>
+                                <textarea name="message" class="form-control bg-light border-0 p-3" rows="5" required placeholder="How can we help you?">{{ old('message') }}</textarea>
                             </div>
                             <div class="col-12 mt-4">
                                 <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm hover-scale text-uppercase" style="letter-spacing: 0.5px;">

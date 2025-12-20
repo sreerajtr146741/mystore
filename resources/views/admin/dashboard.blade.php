@@ -98,6 +98,23 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-md-3">
+            <a href="{{ route('admin.messages.index') }}" class="text-decoration-none">
+                <div class="card stat-card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Messages</div>
+                            <h3 class="mb-0">{{ \App\Models\ContactMessage::count() }}</h3>
+                            <small class="text-light">Inbox</small>
+                        </div>
+                        <div class="stat-icon bg-danger bg-opacity-25 text-danger">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 
     <!-- Revenue Chart (Full Width) -->

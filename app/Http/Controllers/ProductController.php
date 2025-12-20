@@ -78,57 +78,6 @@ class ProductController extends Controller
                 return view('partials.product-list', compact('products'))->render();
             }
 
-            // --- HOMEPAGE CATEGORIZED LOGIC ---
-            // If no search, no specific category filter, and page 1 (or no page), show categorized view
-            $showCategorized = !$request->has('search') && !$request->has('category') && (!$request->has('page') || $request->query('page') == 1);
-            
-            $latestProducts = collect();
-            $fashionProducts = collect();
-            $vehicleProducts = collect();
-            $fruitProducts = collect();
-
-            if ($showCategorized) {
-                // 1. Latest Products
-                $latestProducts = Product::query()
-                    ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
-                    ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
-                    ->latest()
-                    ->take(8)
-                    ->get();
-                
-                // 2. Fashion (Clothing) - Assuming mapped to 'Fashion'
-                $fashionProducts = Product::query()
-                    ->where(function($q) {
-                        $q->where('category', 'Fashion')
-                          ->orWhere('category', 'Clothing') // In case it exists
-                          ->orWhere('category', 'Shoes')
-                          ->orWhere('category', 'Watches');
-                    })
-                    ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
-                    ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
-                    ->latest()
-                    ->take(8)
-                    ->get();
-
-                // 3. Vehicles
-                $vehicleProducts = Product::query()
-                     ->whereIn('category', ['Vehicles', 'Cars', 'Bikes'])
-                     ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
-                     ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
-                     ->latest()
-                     ->take(8)
-                     ->get();
-
-                // 4. Fruits/Groceries
-                $fruitProducts = Product::query()
-                     ->whereIn('category', ['Fruits', 'Vegetables'])
-                     ->when(Schema::hasColumn('products', 'is_active'), fn($q) => $q->where('is_active', true))
-                     ->when(Schema::hasColumn('products', 'status'), fn($q) => $q->where('status', 'active'))
-                     ->latest()
-                     ->take(8)
-                     ->get();
-            }
-
             // --- CAROUSEL LOGIC ---
             $carouselSlides = collect();
             
@@ -175,12 +124,7 @@ class ProductController extends Controller
 
             return view('products.index', compact(
                 'products', 
-                'carouselSlides',
-                'showCategorized',
-                'latestProducts',
-                'fashionProducts',
-                'vehicleProducts',
-                'fruitProducts'
+                'carouselSlides'
             ));
         } catch (\Throwable $e) {
             \Log::error('Product index error: '.$e->getMessage());
@@ -472,15 +416,52 @@ class ProductController extends Controller
                 'stock'           => 'required|integer|min:0',
                 'category'        => 'nullable|string|max:255',
                 'sku'             => 'nullable|string|max:64',
-                'description'     => 'nullable|string|max:300',
+                'description'     => 'nullable|string|max:1000',
                 'is_active'       => 'nullable|boolean',
                 'discount_type'   => 'nullable|in:percent,flat',
                 'discount_value'  => 'nullable|numeric|min:0',
                 'image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+                'highlights'      => 'nullable|string',
+                'specifications'  => 'nullable|string',
             ]);
 
             if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            // Parse Highlights
+            if (!empty($data['highlights'])) {
+                $data['highlights'] = array_values(array_filter(preg_split('/\r\n|\r|\n/', $data['highlights']), function($v){
+                    return !empty(trim($v));
+                }));
+            } else {
+                $data['highlights'] = [];
+            }
+
+            // Parse Specifications (Format: Category | Key : Value)
+            if (!empty($data['specifications'])) {
+                $specs = [];
+                $lines = preg_split('/\r\n|\r|\n/', $data['specifications']);
+                foreach($lines as $line) {
+                    if (empty(trim($line))) continue;
+                    
+                    $category = 'General';
+                    $content = $line;
+                    
+                    if (str_contains($line, '|')) {
+                        [$cat, $rest] = explode('|', $line, 2);
+                        $category = trim($cat);
+                        $content = trim($rest);
+                    }
+                    
+                    if (str_contains($content, ':')) {
+                        [$key, $val] = explode(':', $content, 2);
+                        $specs[$category][] = ['key' => trim($key), 'value' => trim($val)];
+                    }
+                }
+                $data['specifications'] = $specs;
+            } else {
+                $data['specifications'] = [];
             }
 
             $data['user_id']   = $request->user()->id;
@@ -524,11 +505,13 @@ class ProductController extends Controller
                 'stock'           => 'required|integer|min:0',
                 'category'        => 'nullable|string|max:255',
                 'sku'             => 'nullable|string|max:64',
-                'description'     => 'nullable|string|max:300',
+                'description'     => 'nullable|string|max:1000',
                 'is_active'       => 'nullable|boolean',
                 'discount_type'   => 'nullable|in:percent,flat',
                 'discount_value'  => 'nullable|numeric|min:0',
                 'image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+                'highlights'      => 'nullable|string',
+                'specifications'  => 'nullable|string',
             ]);
 
             if ($request->hasFile('image')) {
@@ -536,6 +519,41 @@ class ProductController extends Controller
                     Storage::disk('public')->delete($product->image);
                 }
                 $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            // Parse Highlights
+            if (!empty($data['highlights'])) {
+                $data['highlights'] = array_values(array_filter(preg_split('/\r\n|\r|\n/', $data['highlights']), function($v){
+                    return !empty(trim($v));
+                }));
+            } else {
+                $data['highlights'] = [];
+            }
+
+            // Parse Specifications (Format: Category | Key : Value)
+            if (!empty($data['specifications'])) {
+                $specs = [];
+                $lines = preg_split('/\r\n|\r|\n/', $data['specifications']);
+                foreach($lines as $line) {
+                    if (empty(trim($line))) continue;
+                    
+                    $category = 'General';
+                    $content = $line;
+                    
+                    if (str_contains($line, '|')) {
+                        [$cat, $rest] = explode('|', $line, 2);
+                        $category = trim($cat);
+                        $content = trim($rest);
+                    }
+                    
+                    if (str_contains($content, ':')) {
+                        [$key, $val] = explode(':', $content, 2);
+                        $specs[$category][] = ['key' => trim($key), 'value' => trim($val)];
+                    }
+                }
+                $data['specifications'] = $specs;
+            } else {
+                $data['specifications'] = [];
             }
 
             $data['is_active'] = $request->boolean('is_active');

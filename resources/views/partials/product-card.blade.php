@@ -39,29 +39,26 @@
             @endif
         </div>
 
-        <p class="muted small flex-grow-1">
-            {{ $p->description ? Str::limit($p->description, 90) : 'No description' }}
-        </p>
 
-        @if(!is_null($stock))
-            <div class="small {{ $stock > 0 ? 'text-success' : 'text-danger' }}">
-                <span class="stock-dot" style="background:{{ $stock > 0 ? '#22c55e' : '#ef4444' }}"></span>
-                {{ $stock > 0 ? $stock.' in stock' : 'Out of stock' }}
-            </div>
-        @endif
 
-        <div class="mt-2">
-            @if($hasDiscount)
-                <div>
-                    <span class="strike muted">₹{{ number_format($p->price, 2) }}</span>
-                    <span class="price text-success">₹{{ number_format($finalPrice, 2) }}</span>
+        <div class="mt-auto">
+            @if(!is_null($stock))
+                <div class="small {{ $stock > 0 ? 'text-success' : 'text-danger' }} mb-2">
+                    <span class="stock-dot" style="background:{{ $stock > 0 ? '#22c55e' : '#ef4444' }}"></span>
+                    {{ $stock > 0 ? $stock.' in stock' : 'Out of stock' }}
                 </div>
-                <div class="small text-success">
-                    Save ₹{{ number_format($saveAmt, 2) }} ({{ $savePct }}%)
-                </div>
-            @else
-                <span class="price">₹{{ number_format($p->price, 2) }}</span>
             @endif
+
+            <div>
+                @if($hasDiscount)
+                    <div>
+                        <span class="strike muted">₹{{ number_format($p->price, 2) }}</span>
+                        <span class="price text-success">₹{{ number_format($finalPrice, 2) }}</span>
+                    </div>
+                @else
+                    <span class="price">₹{{ number_format($p->price, 2) }}</span>
+                @endif
+            </div>
         </div>
     </div>
 </div>

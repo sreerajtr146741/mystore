@@ -34,7 +34,9 @@ class Product extends Model
         'is_active',
 
         // ADD:
-        'category_id', // keep your string 'category' too; this just enables relation
+        'category_id',
+        'highlights',
+        'specifications',
     ];
 
     /**
@@ -44,8 +46,12 @@ class Product extends Model
         'price'               => 'decimal:2',
         'discount_value'      => 'decimal:2',
         'stock'               => 'integer',
+        'is_featured'         => 'boolean',
         'is_discount_active'  => 'boolean',
         'is_active'           => 'boolean',
+        'images'              => 'array',
+        'highlights'          => 'array',
+        'specifications'      => 'array',
         'discount_starts_at'  => 'datetime',
         'discount_ends_at'    => 'datetime',
         'banner_start_at'     => 'datetime',

@@ -129,6 +129,32 @@
         <textarea name="description" rows="4" class="form-control">{{ old('description', $product->description) }}</textarea>
       </div>
 
+      @php
+          $highlightsText = implode("\n", $product->highlights ?? []);
+          $specsText = "";
+          if(!empty($product->specifications)) {
+              foreach($product->specifications as $cat => $items) {
+                  foreach($items as $item) {
+                      $specsText .= "$cat | {$item['key']} : {$item['value']}\n";
+                  }
+              }
+          }
+      @endphp
+
+      {{-- HIGHLIGHTS --}}
+      <div class="mb-3">
+        <label>Highlights</label>
+        <textarea name="highlights" rows="5" class="form-control" placeholder="Fast 1ms Response Time&#10;180Hz Refresh Rate">{{ old('highlights', $highlightsText) }}</textarea>
+        <div class="muted small mt-1">One highlight per line.</div>
+      </div>
+
+      {{-- SPECIFICATIONS --}}
+      <div class="mb-3">
+        <label>Specifications</label>
+        <textarea name="specifications" rows="8" class="form-control" style="font-family:monospace" placeholder="General | Brand : MSI">{{ old('specifications', $specsText) }}</textarea>
+        <div class="muted small mt-1">Format: <code>Category | Key : Value</code></div>
+      </div>
+
       {{-- PRICE + STOCK --}}
       <div class="row">
         <div class="col-md-6 mb-3">

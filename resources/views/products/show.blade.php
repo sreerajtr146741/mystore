@@ -2,429 +2,297 @@
 
 @section('title', $product->name . ' • MyStore')
 
+@section('content')
 @php
     use Illuminate\Support\Facades\Storage;
     $p = $product;
-
-    // Image helper
+    
+    // Image Helper
     $img = function($path){
         if(!$path) return null;
         if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
         if (Storage::disk('public')->exists($path)) return asset('storage/'.$path);
-        return $path;
+        return asset('storage/'.$path); // fallback
     };
-
-    $photo = $img($p->image);
-
-    // Pricing logic
+    
+    // Pricing
     $final = $p->discounted_price ?? $p->final_price ?? $p->price;
     $hasDisc = $final < $p->price;
-
-    // Fallback logic check shouldn't be needed if controller is correct, but keeping safe
-    if (!$hasDisc && ($p->discount_type && $p->discount_value > 0 && ($p->is_discount_active ?? false))) {
-        $final = $p->discount_type === 'percent'
-            ? max(0, $p->price - ($p->price * ($p->discount_value/100)))
-            : max(0, $p->price - $p->discount_value);
-        $hasDisc = true;
-    }
-
     $saveAmt = max(0, $p->price - $final);
     $savePct = $p->price > 0 ? round(($saveAmt / $p->price) * 100) : 0;
-    $stock   = $p->stock ?? $p->qty ?? null;
+    
+    // Gallery Images (Main + Banners as gallery for now)
+    $gallery = collect();
+    if($p->image) $gallery->push($img($p->image));
+    if($p->banners) {
+        foreach($p->banners as $b) {
+            $gallery->push($img($b->image));
+        }
+    }
+    // If no images at all
+    if($gallery->isEmpty()) $gallery->push(asset('images/placeholder.png')); // simplified
+    
+    $mainImage = $gallery->first();
 @endphp
 
-@push('styles')
 <style>
-    .hero{
-        background: linear-gradient(120deg,#6d28d9 0%, #4c1d95 45%, #3b82f6 100%);
-        color:#fff; border-radius:16px; padding:22px; box-shadow:0 18px 40px rgba(76,29,149,.25);
-    }
-    .gallery{ border-radius:24px; overflow:hidden; background:#fff; box-shadow:0 20px 40px rgba(0,0,0,.08); display: flex; align-items: center; justify-content: center; padding: 40px; }
-    .img-main{ max-width:100%; height:auto; max-height:600px; object-fit:contain; display:block; }
-    .badge-cat{ background:#fff3c4; color:#7c2d12; border:1px solid #fde68a; }
-    .stock-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:.4rem; }
-    .strike{ text-decoration: line-through; opacity:.7; margin-right:.4rem; }
-    .price-lg{ font-size:2.2rem; font-weight:800; }
-    .card-sticky{ position:sticky; top:84px; border:0; border-radius:16px; overflow:hidden; background:#fff; box-shadow:0 10px 26px rgba(2,6,23,.08); }
-    .ribbon{
-        --c:#22c55e;
-        position:absolute; top:14px; left:-40px; background:var(--c); color:#fff;
-        padding:6px 60px; transform:rotate(-35deg); font-weight:700; box-shadow:0 6px 16px rgba(34,197,94,.3);
-        letter-spacing:.5px; font-size:.85rem;
-    }
-    .btn-cart{
-        background: linear-gradient(135deg, #ff9f00, #fb641b);
-        border: none; padding: 12px 18px; font-weight:700; color:#fff;
-        box-shadow:0 10px 20px rgba(251,100,27,.25);
-        transition: all 0.3s ease;
-        border-radius: 50px;
-    }
-    .btn-cart:hover{
-        background: linear-gradient(135deg, #ffb84d, #ff8c42) !important;
-        transform: translateY(-4px);
-        box-shadow: 0 16px 30px rgba(251,100,27,.4);
-        color: #fff !important;
-    }
-    .btn-buynow{
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        border: none; padding: 12px 18px; font-weight:700; color:#fff;
-        box-shadow:0 10px 20px rgba(34,197,94,.25);
-        transition: all 0.3s ease;
-        border-radius: 50px;
-    }
-    .btn-buynow:hover{
-        background: linear-gradient(135deg, #4ade80, #22c55e) !important;
-        transform: translateY(-4px);
-        box-shadow: 0 16px 30px rgba(34,197,94,.4);
-        color: #fff !important;
-    }
-    .btn-buynow:hover{
-        background: linear-gradient(135deg, #4ade80, #22c55e) !important;
-        transform: translateY(-4px);
-        box-shadow: 0 16px 30px rgba(34,197,94,.4);
-        color: #fff !important;
-    }
+    body { background-color: #f1f3f6; font-family: Roboto, Arial, sans-serif; }
+    .product-container { background: #fff; padding: 16px; box-shadow: 0 1px 1px 0 rgba(0,0,0,.16); }
     
-    /* Standard Banner Size - Same as Index */
-    .banner-container {
-        width: 100%;
-        aspect-ratio: 5/1; /* Further reduced height */
-        overflow: hidden;
-        position: relative;
+    /* Left Column */
+    .left-col { position: sticky; top: 20px; }
+    .gallery-wrapper { display: flex; flex-direction: row; gap: 10px; }
+    .thumbnails { display: flex; flex-direction: column; gap: 5px; width: 64px; }
+    .thumb-box { 
+        width: 64px; height: 64px; border: 1px solid #f0f0f0; 
+        cursor: pointer; overflow: hidden; padding: 2px;
+        transition: border-color .2s;
     }
+    .thumb-box:hover, .thumb-box.active { border-color: #2874f0; }
+    .thumb-box img { width: 100%; height: 100%; object-fit: contain; }
     
-    .standard-banner {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: top center; /* Align to top to keep content visible */
+    .main-image-box { 
+        flex-grow: 1; height: 500px; display: flex; align-items: center; justify-content: center; 
+        border: 1px solid #f0f0f0; position: relative;
     }
+    .main-image-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    
+    .action-btns { margin-top: 15px; display: flex; gap: 10px; }
+    .btn-fk { 
+        flex: 1; padding: 18px 8px; border: none; color: #fff; 
+        font-weight: 600; font-size: 16px; border-radius: 2px; 
+        text-transform: uppercase; box-shadow: 0 1px 2px 0 rgba(0,0,0,.2);
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        transition: box-shadow .2s;
+    }
+    .btn-fk:hover { box-shadow: 0 4px 8px 0 rgba(0,0,0,.2); color: #fff !important; opacity: 0.95; }
+    .btn-cart { background: #ff9f00; }
+    .btn-buy { background: #fb641b; }
+    .btn-cart:hover { background: #f29700; }
+    .btn-buy:hover { background: #ee5b16; }
 
-    @media (max-width: 768px) {
-        .banner-container {
-            aspect-ratio: 2.5/1;
-        }
+    /* Right Column */
+    .breadcrumb { font-size: 12px; color: #878787; margin-bottom: 5px; }
+    .breadcrumb a { color: #878787; text-decoration: none; }
+    .breadcrumb a:hover { color: #2874f0; }
+    
+    .product-title { font-size: 18px; color: #212121; margin-bottom: 5px; }
+    
+    .rating-badge { 
+        background-color: #388e3c; color: #fff; font-size: 12px; padding: 2px 6px; 
+        border-radius: 3px; font-weight: 500; display: inline-flex; align-items: center; vertical-align: middle; gap: 2px;
+    }
+    
+    .price-block { display: flex; align-items: baseline; gap: 10px; margin: 10px 0; }
+    .final-price { font-size: 28px; font-weight: 500; color: #212121; }
+    .original-price { font-size: 16px; color: #878787; text-decoration: line-through; }
+    .discount-pct { font-size: 16px; color: #388e3c; font-weight: 500; }
+    
+    .offers-list { list-style: none; padding: 0; font-size: 14px; margin-top: 10px; }
+    .offers-list li { margin-bottom: 8px; display: flex; gap: 8px; color: #212121; }
+    .tag-icon { color: #16bd49; flex-shrink: 0; margin-top: 2px; }
+    
+    .section-head { font-size: 16px; font-weight: 500; color: #212121; display: flex; width: 110px; flex-shrink: 0; }
+    .row-section { display: flex; margin-top: 24px; }
+    .row-content { flex-grow: 1; }
+    
+    .highlights-list { list-style: none; padding: 0; font-size: 14px; color: #212121; margin: 0; }
+    .highlights-list li { margin-bottom: 5px; display: flex; gap: 8px; }
+    .highlights-list li::before { content: "•"; color: #c2c2c2; }
+    
+    .specs-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .specs-table td { padding: 8px 0; vertical-align: top; }
+    .col-key { color: #878787; width: 33%; }
+    .col-val { color: #212121; }
+    .spec-cat-title { font-size: 18px; color: #000; margin-top: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 10px; }
+    
+    .desc-text { font-size: 14px; color: #212121; line-height: 1.5; white-space: pre-wrap; }
+    
+    /* Responsive */
+    @media(max-width: 768px){
+        .left-col { position: static; }
+        .gallery-wrapper { flex-direction: column-reverse; }
+        .thumbnails { flex-direction: row; width: 100%; overflow-x: auto; }
+        .section-head { width: 100%; margin-bottom: 10px; }
+        .row-section { flex-direction: column; }
     }
 </style>
-@endpush
 
-@section('content')
-<div class="container py-4">
-    @php
-        // Gather all valid banners
-        $validBanners = collect();
-        $now = now();
-
-        // Helper to check standard start/end
-        $checkDates = function($s, $e) use ($now) {
-            if (!$s && !$e) return true; // No dates = always show
-            if ($s && $e) return $now->between($s, $e);
-            if ($s) return $now->gte($s);
-            if ($e) return $now->lte($e);
-            return false;
-        };
-
-        // 1. Legacy Banner
-        if ($p->banner && $checkDates($p->banner_start_at, $p->banner_end_at)) {
-            $validBanners->push(['url' => asset('storage/' . $p->banner), 'id' => 'legacy']);
-        }
-
-        // 2. New Banners
-        foreach($p->banners as $b) {
-            if ($checkDates($b->start_at, $b->end_at)) {
-                $validBanners->push(['url' => asset('storage/' . $b->image), 'id' => $b->id]);
-            }
-        }
-    @endphp
-
-    <!-- DEBUG: Found {{ $validBanners->count() }} valid banners. Total DB banners: {{ $p->banners->count() }} -->
-    
-    {{-- TEMPORARY DEBUGGING BLOCK (Remove after fixing) --}}
-    @if($validBanners->count() == 0 && ($p->banner || $p->banners->count() > 0))
-        <div class="alert alert-warning">
-            <strong>Debug Info (Banner Hidden):</strong><br>
-            Server Time: {{ $now }} ({{ config('app.timezone') }})<br>
-            
-            @if($p->banner)
-                 Ref: Legacy Banner | Dates: {{ $p->banner_start_at }} to {{ $p->banner_end_at }} <br>
-            @endif
-            
-            @foreach($p->banners as $b)
-                Ref: New Banner #{{ $b->id }} | Dates: {{ $b->start_at }} to {{ $b->end_at }} <br>
-            @endforeach
-        </div>
-    @endif
-
-    @if($validBanners->count() > 0)
-        <div class="mb-4 rounded-4 overflow-hidden shadow-sm position-relative">
-            @if($validBanners->count() > 1)
-                {{-- Carousel --}}
-                <div id="productBannerCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-indicators">
-                        @foreach($validBanners as $key => $ban)
-                            <button type="button" data-bs-target="#productBannerCarousel" 
-                                    data-bs-slide-to="{{ $key }}" 
-                                    class="{{ $loop->first ? 'active' : '' }}" 
-                                    aria-current="{{ $loop->first ? 'true' : 'false' }}"></button>
-                        @endforeach
-                    </div>
-                    <div class="carousel-inner">
-                        @foreach($validBanners as $ban)
-                            <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                <div class="banner-container">
-                                    <img src="{{ $ban['url'] }}" alt="{{ $p->name }} Banner" class="d-block standard-banner">
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#productBannerCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#productBannerCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                </div>
-            @else
-                {{-- Single --}}
-                 <div class="banner-container">
-                     <img src="{{ $validBanners->first()['url'] }}" alt="{{ $p->name }} Banner" class="d-block standard-banner">
-                 </div>
-            @endif
-        </div>
-    @endif
-
-    <div class="hero mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between">
-        <h1 class="display-6 fw-bold mb-2 mb-lg-0" style="letter-spacing: -0.03em;">{{ $p->name }}</h1>
-        @if($p->category)
-            <span class="badge badge-cat">{{ $p->category }}</span>
-        @endif
-    </div>
-
-    <div class="row g-4">
-        <div class="col-lg-7">
-            <div class="position-relative gallery mb-3">
-                @if($hasDisc)
-                    <div class="ribbon">
-                        {{ $savePct }}% OFF
-                    </div>
-                @endif
-                @if($photo)
-                    <img src="{{ $photo }}" alt="{{ $p->name }}" class="img-main">
-                @else
-                    <div class="bg-light d-flex align-items-center justify-content-center" style="aspect-ratio:4/3;">
-                        <i class="bi bi-image fs-1 text-muted"></i>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <div class="col-lg-5">
-            <div class="card card-sticky">
-                <div class="card-body p-4">
-                    @if(!is_null($stock))
-                        <div class="mb-2 {{ $stock>0 ? 'text-success' : 'text-danger' }}">
-                            <span class="stock-dot" style="background:{{ $stock>0 ? '#22c55e' : '#ef4444' }}"></span>
-                            {{ $stock>0 ? ($stock.' in stock') : 'Out of stock' }}
-                        </div>
-                    @endif
-
-                    <div class="mb-2">
-                        @if($hasDisc)
-                            <div>
-                                <span class="strike">₹{{ number_format($p->price,2) }}</span>
-                                <span class="price-lg text-success">₹<span id="unit_final">{{ number_format($final,2) }}</span></span>
-                            </div>
-                            <div class="small text-success">
-                                You save ₹{{ number_format($saveAmt,2) }} ({{ $savePct }}%)
-                            </div>
-                        @else
-                            <span class="price-lg">₹<span id="unit_final">{{ number_format($final,2) }}</span></span>
-                        @endif
-                    </div>
-
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <label for="qty" class="small text-muted mb-0">Qty</label>
-                        <input type="number" id="qty" value="1" min="1"
-                               @if(!is_null($stock)) max="{{ max(1,(int)$stock) }}" @endif
-                               class="form-control" style="width:110px;">
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="small text-muted">Total</div>
-                        <div class="fw-bold fs-5">₹ <span id="total_price">{{ number_format($final,2) }}</span></div>
-                    </div>
-
-                    <div class="d-flex gap-3 flex-wrap">
-                        @auth
-                            <form action="{{ route('cart.add', $p) }}" method="POST" class="d-inline flex-fill">
-                                @csrf
-                                <input type="hidden" name="qty" id="qty_add" value="1">
-                                <button type="submit" class="btn btn-cart rounded-pill shadow w-100">
-                                    Add to Cart
-                                </button>
-                            </form>
-
-                            <form action="{{ route('checkout.single', $p->id) }}" method="GET" class="d-inline flex-fill">
-                                <input type="hidden" name="qty" id="qty_buy" value="1">
-                                <button type="submit" class="btn btn-buynow rounded-pill shadow w-100">
-                                    Buy Now
-                                </button>
-                            </form>
-                        @else
-                            <a href="{{ route('login') }}" class="btn btn-primary rounded-pill shadow px-5">
-                                Login to Buy
-                            </a>
-                        @endauth
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    {{-- Description & Services Row --}}
-    <div class="row mt-4">
-        <div class="col-lg-7 mb-4 mb-lg-0">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Description</h5>
-                    <p class="mb-0 lh-lg text-secondary" style="white-space: pre-wrap;">{{ $p->description ?: 'No description available.' }}</p>
-                </div>
-            </div>
-        </div>
+<div class="container-fluid mt-2 mb-4" style="max-width: 1400px;">
+    <div class="product-container row g-0">
         
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Available Services</h5>
+        {{-- LEFT COLUMN: IMAGES & BUTTONS --}}
+        <div class="col-md-5 col-lg-4 p-3 left-col">
+            <div class="position-relative">
+                <div class="gallery-wrapper">
+                    {{-- Thumbnails --}}
+                    @if($gallery->count() > 1)
+                    <div class="thumbnails">
+                        @foreach($gallery as $i => $src)
+                            <div class="thumb-box {{ $loop->first ? 'active' : '' }}" onclick="changeImage('{{ $src }}', this)">
+                                <img src="{{ $src }}" alt="Thumb">
+                            </div>
+                        @endforeach
+                    </div>
+                    @endif
                     
-                    <div class="d-flex align-items-start gap-3 mb-3">
-                        <i class="bi bi-arrow-counterclockwise fs-4 text-primary"></i>
-                        <div>
-                            <div class="fw-bold small">7 Days Replacement Policy</div>
-                            <div class="small text-muted">Returns accepted within 7 days</div>
+                    {{-- Main Image --}}
+                    <div class="main-image-box">
+                        {{-- Wishlist Icon (decorative) --}}
+                        <div class="position-absolute top-0 end-0 p-3">
+                            <i class="bi bi-heart-fill text-secondary fs-4" style="opacity: 0.3;"></i>
                         </div>
+                        <img id="mainImage" src="{{ $mainImage }}" alt="{{ $p->name }}">
                     </div>
-
-                    <div class="d-flex align-items-start gap-3 mb-3">
-                        <i class="bi bi-cash-coin fs-4 text-primary"></i>
-                        <div>
-                            <div class="fw-bold small">Cash on Delivery Available</div>
-                            <div class="small text-muted">Pay securely at your doorstep</div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-start gap-3 mb-3">
-                        <i class="bi bi-shield-check fs-4 text-primary"></i>
-                        <div>
-                            <div class="fw-bold small">1 Year Warranty</div>
-                            <div class="small text-muted">Detailed warranty info inside box</div>
-                        </div>
-                    </div>
+                </div>
+            
+                <div class="action-btns">
+                    @auth
+                        <form action="{{ route('cart.add', $p) }}" method="POST" class="flex-fill d-flex">
+                            @csrf
+                            <input type="hidden" name="qty" value="1">
+                            <button class="btn btn-fk btn-cart flex-fill">
+                                <i class="bi bi-cart-fill"></i> ADD TO CART
+                            </button>
+                        </form>
+                        <form action="{{ route('checkout.single', $p->id) }}" method="GET" class="flex-fill d-flex">
+                            <input type="hidden" name="qty" value="1">
+                            <button class="btn btn-fk btn-buy flex-fill">
+                                <i class="bi bi-lightning-fill"></i> BUY NOW
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-fk btn-cart"><i class="bi bi-cart-fill"></i> ADD TO CART</a>
+                        <a href="{{ route('login') }}" class="btn btn-fk btn-buy"><i class="bi bi-lightning-fill"></i> BUY NOW</a>
+                    @endauth
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- Similar Products Section --}}
-    @if(isset($similarProducts) && $similarProducts->count() > 0)
-    <div class="row mt-5">
-        <div class="col-12 mb-4">
-            <h3 class="fw-bold">Similar Products</h3>
-        </div>
-        @foreach($similarProducts as $sp)
-            @php
-                // Calc similar product price
-                $sFinal = $sp->discounted_price ?? $sp->final_price ?? $sp->price;
-                $sHasDisc = $sFinal < $sp->price;
+        {{-- RIGHT COLUMN: DETAILS --}}
+        <div class="col-md-7 col-lg-8 p-3 ps-md-4">
+            
+            {{-- Breadcrumb --}}
+            <div class="breadcrumb">
+                <a href="{{ url('/') }}">Home</a> &nbsp;›&nbsp; 
+                <a href="{{ route('products.index') }}">Products</a> &nbsp;›&nbsp; 
+                @if($p->category) <a href="{{ route('products.index', ['category'=>$p->category]) }}">{{ $p->category }}</a> &nbsp;›&nbsp; @endif
+                <span>{{ $p->name }}</span>
+            </div>
+
+            <h1 class="product-title fw-normal">{{ $p->name }}</h1>
+            
+            {{-- Rating removed as per request --}}
+            {{-- <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="rating-badge">
+                    4.6 <i class="bi bi-star-fill" style="font-size: 10px;"></i>
+                </div>
+                <span class="text-secondary fw-medium" style="font-size: 14px; color: #878787;">11 Ratings & 0 Reviews</span>
+            </div> --}}
+
+            <div class="price-block">
+                <span class="final-price">₹{{ number_format($final, 0) }}</span>
+                @if($hasDisc)
+                    <span class="original-price">₹{{ number_format($p->price, 0) }}</span>
+                    <span class="discount-pct">{{ $savePct }}% off</span>
+                @endif
+            </div>
+
+            {{-- Offers --}}
+            <div class="mb-3">
+                <div class="fw-bold fs-6 mb-2">Available offers</div>
+                <ul class="offers-list">
+                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Bank Offer</strong> 5% Unlimited Cashback on Flipkart Axis Bank Credit Card <a href="#" class="text-primary text-decoration-none">T&C</a></span></li>
+                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Bank Offer</strong> 10% off on SBI Credit Card, up to ₹1,500. On orders of ₹5,000 and above <a href="#" class="text-primary text-decoration-none">T&C</a></span></li>
+                    <li><i class="bi bi-tag-fill tag-icon"></i> <span><strong>Partner Offer</strong> Sign up for Flipkart Pay Later and get Flipkart Gift Card worth up to ₹500* <a href="#" class="text-primary text-decoration-none">Know More</a></span></li>
+                </ul>
+            </div>
+
+            {{-- Delivery --}}
+            <div class="row-section">
+                <div class="section-head text-secondary">Delivery</div>
+                <div class="row-content">
+                    <div class="fw-medium mb-1">Delivery by {{ now()->addDays(4)->format('d M, l') }} <span class="text-secondary">|</span> <span class="text-success">Free</span></div>
+                    <div class="small text-secondary">
+                         if ordered before {{ now()->addHours(5)->format('h:i A') }}
+                    </div>
+                </div>
+            </div>
+
+            {{-- Highlights --}}
+            @if(!empty($p->highlights))
+            <div class="row-section">
+                <div class="section-head text-secondary">Highlights</div>
+                <div class="row-content">
+                    <ul class="highlights-list">
+                        @foreach($p->highlights as $hl)
+                            <li>{{ $hl }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+            @endif
+
+            {{-- Description --}}
+            @if($p->description)
+            <div class="mt-4 border p-3 rounded">
+                <div class="fs-5 fw-bold mb-3">Description</div>
+                <div class="desc-text text-secondary">{{ $p->description }}</div>
+            </div>
+            @endif
+
+            {{-- Specifications --}}
+            @if(!empty($p->specifications))
+            <div class="mt-4 border rounded p-3">
+                <div class="fs-5 fw-bold mb-3">Specifications</div>
                 
-                // Image handling
-                $sImage = $sp->image;
-                if ($sImage && !filter_var($sImage, FILTER_VALIDATE_URL)) {
-                   $sImage = asset('storage/' . $sImage);
-                }
-            @endphp
-            <div class="col-6 col-md-3 mb-4">
-                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative product-card">
-                    <a href="{{ route('products.show', $sp->id) }}" class="text-decoration-none">
-                        <div class="position-relative" style="padding-top: 100%;">
-                            @if($sp->image)
-                                <img src="{{ $sImage }}" alt="{{ $sp->name }}" 
-                                     class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover p-3">
-                            @else
-                                <div class="position-absolute top-0 start-0 w-100 h-100 bg-light d-flex align-items-center justify-content-center text-muted">
-                                    <i class="bi bi-image fs-1"></i>
-                                </div>
-                            @endif
-                        </div>
-                    </a>
-                    <div class="card-body p-3 d-flex flex-column">
-                        <h6 class="card-title text-truncate fw-bold mb-1">
-                            <a href="{{ route('products.show', $sp->id) }}" class="text-dark text-decoration-none">{{ $sp->name }}</a>
-                        </h6>
-                        
-                        <div class="mb-3">
-                            @if($sHasDisc)
-                                <small class="text-decoration-line-through text-muted me-1">₹{{ number_format($sp->price,0) }}</small>
-                                <span class="fw-bold text-success">₹{{ number_format($sFinal,0) }}</span>
-                            @else
-                                <span class="fw-bold text-dark">₹{{ number_format($sFinal,0) }}</span>
-                            @endif
-                        </div>
-
-                        <div class="mt-auto d-flex gap-2">
-                            {{-- Add to Cart --}}
-                            @auth
-                                <form action="{{ route('cart.add', $sp->id) }}" method="POST" class="flex-fill">
-                                    @csrf
-                                    <input type="hidden" name="qty" value="1">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning w-100 fw-bold border-2 rounded-pill">
-                                        <i class="bi bi-cart-plus"></i>
-                                    </button>
-                                </form>
-                                {{-- Buy Now --}}
-                                <form action="{{ route('checkout.single', $sp->id) }}" method="GET" class="flex-fill">
-                                    <input type="hidden" name="qty" value="1">
-                                    <button type="submit" class="btn btn-sm btn-outline-success w-100 fw-bold border-2 rounded-pill">
-                                        Buy
-                                    </button>
-                                </form>
-                            @else
-                                <a href="{{ route('login') }}" class="btn btn-sm btn-outline-primary w-100 rounded-pill">Login to Buy</a>
-                            @endauth
-                        </div>
+                @foreach($p->specifications as $cat => $items)
+                    <div class="mb-3">
+                        <div class="spec-cat-title fs-6">{{ $cat }}</div>
+                        <table class="specs-table">
+                            @foreach($items as $spec)
+                                <tr>
+                                    <td class="col-key">{{ $spec['key'] }}</td>
+                                    <td class="col-val">{{ $spec['value'] }}</td>
+                                </tr>
+                            @endforeach
+                        </table>
                     </div>
-                </div>
+                @endforeach
             </div>
-        @endforeach
+            @endif
+
+        </div>
     </div>
+    
+    {{-- Similar Products --}}
+    @if(isset($similarProducts) && $similarProducts->count() > 0)
+        <div class="card mt-2 border-0 shadow-sm p-3">
+            <h5 class="fw-bold mb-3">Similar Products</h5>
+            <div class="row g-3">
+            @foreach($similarProducts as $sp)
+                <div class="col-6 col-md-3">
+                     <div class="p-2 border rounded text-center h-100">
+                         <a href="{{ route('products.show', $sp->id) }}" class="text-decoration-none text-dark">
+                             <img src="{{ $img($sp->image) }}" class="img-fluid mb-2" style="max-height: 150px;">
+                             <div class="text-truncate fw-medium">{{ $sp->name }}</div>
+                             <div class="text-success fw-bold">₹{{ number_format($sp->final_price ?? $sp->price, 0) }}</div>
+                         </a>
+                     </div>
+                </div>
+            @endforeach
+            </div>
+        </div>
     @endif
 </div>
 @endsection
 
 @push('scripts')
 <script>
-    // Live quantity sync + total price update
-    (function(){
-        const qtyInput   = document.getElementById('qty');
-        const totalEl    = document.getElementById('total_price');
-        const qtyAdd     = document.getElementById('qty_add');
-        const qtyBuy     = document.getElementById('qty_buy');
-        const unitPrice  = {{ $final }};
-
-        function updateTotal() {
-            const qty = Math.max(1, parseInt(qtyInput.value) || 1);
-            if (qtyAdd) qtyAdd.value = qty;
-            if (qtyBuy) qtyBuy.value = qty;
-            const total = (unitPrice * qty).toFixed(2);
-            totalEl.textContent = Number(total).toLocaleString('en-IN');
-        }
-
-        if(qtyInput) {
-            qtyInput.addEventListener('input', updateTotal);
-            updateTotal();
-        }
-    })();
+    function changeImage(src, el) {
+        document.getElementById('mainImage').src = src;
+        document.querySelectorAll('.thumb-box').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    }
 </script>
 @endpush
