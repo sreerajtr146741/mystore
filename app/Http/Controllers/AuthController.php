@@ -314,7 +314,7 @@ class AuthController extends Controller
     }
 
     /* -------------------------
-        FORGOT PASSWORD FLOW
+         FORGOT PASSWORD FLOW
     -------------------------- */
     public function showForgotPasswordForm()
     {

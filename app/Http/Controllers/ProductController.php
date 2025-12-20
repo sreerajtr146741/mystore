@@ -371,7 +371,7 @@ class ProductController extends Controller
     }
 
     /* --------------------------------------------------------------------
-     | ADMIN PRODUCT MANAGEMENT (100% UNCHANGED – your original code below)
+     |  ADMIN PRODUCT MANAGEMENT (100% UNCHANGED – your original code below)
      |---------------------------------------------------------------------*/
     public function adminManage(Request $request)
     {

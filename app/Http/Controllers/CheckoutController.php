@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 class CheckoutController extends Controller
 {
     /**
-     * Normalize and fetch current checkout items (prefer checkout_items over cart).
+      Normalize and fetch current checkout items (prefer checkout_items over cart).
      */
     private function currentItems(): array
     {

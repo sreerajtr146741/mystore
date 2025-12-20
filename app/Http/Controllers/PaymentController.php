@@ -15,7 +15,7 @@ class PaymentController extends Controller {
     }
 
     public function payNow(Request $request) {
-        // Validation
+         // Validation
         // Store selected method for the final order creation
         session(['payment_method' => $request->payment_method ?? 'cod']);
         

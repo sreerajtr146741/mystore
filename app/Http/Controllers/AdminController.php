@@ -79,7 +79,7 @@ class AdminController extends Controller {
         $category = Category::find($request->category_id);
 
         // Treat "0" as "Remove/Inherit" -> NULL
-        // If user enters > 0, it wraps/overrides any parent discount.
+             // If user enters > 0, it wraps/overrides any parent discount.
         $val = ($request->discount_percent > 0) ? $request->discount_percent : null;
         
         $category->update([

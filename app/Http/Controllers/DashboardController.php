@@ -44,7 +44,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Monthly Revenue (last 6 months)
+         // Monthly Revenue (last 6 months)
         $monthlyRevenue = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = now()->subMonths($i);

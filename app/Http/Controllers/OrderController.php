@@ -14,7 +14,7 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
-        // View Orders - List
+            // View Orders - List
         $orders = Order::where('user_id', auth()->id())
             ->with(['items.product'])
             ->latest()

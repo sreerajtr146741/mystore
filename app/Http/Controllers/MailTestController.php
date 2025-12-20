@@ -10,7 +10,7 @@ class MailTestController extends Controller
     public function send()
     {
         try {
-            // Send a raw text email using the configured mailer
+                // Send a raw text email using the configured mailer
             Mail::raw('This is a test email sent using Laravel Mail Facade.', function ($message) {
                 $message->to('receiver@example.com')
                         ->subject('Test Email from MyStore (Laravel Mail)');
