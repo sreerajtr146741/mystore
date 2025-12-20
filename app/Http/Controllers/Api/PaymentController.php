@@ -61,7 +61,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Verify payment OTP and complete order
+      Verify payment OTP and complete order
      */
     public function verifyOtp(Request $request)
     {

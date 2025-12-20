@@ -40,7 +40,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Get product details
+      Get product details
      */
     public function show($id)
     {

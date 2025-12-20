@@ -67,7 +67,7 @@ class CartController extends Controller
     }
 
     /**
-     * Remove item from cart
+      Remove item from cart
      */
     public function destroy(Request $request, $id)
     {

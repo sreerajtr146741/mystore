@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class OrderController extends Controller
 {
     /**
-     * Get user's order history
+    Get user's order history
      */
     public function index(Request $request)
     {

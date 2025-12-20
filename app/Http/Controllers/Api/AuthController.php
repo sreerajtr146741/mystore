@@ -76,7 +76,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Login user (sends OTP)
+      Login user (sends OTP)
      */
     public function login(Request $request)
     {
