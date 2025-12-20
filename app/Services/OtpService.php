@@ -39,7 +39,7 @@ class OtpService {
     }
 
     /**
-     * Get email subject and message based on context
+     Get email subject and message based on context
      */
     private static function getEmailContent($context, $data) {
         switch ($context) {
