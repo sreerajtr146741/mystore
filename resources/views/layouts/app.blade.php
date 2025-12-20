@@ -44,13 +44,12 @@
                 @auth
                     <div class="dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown">
-                            <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center"
-                                 style="width:40px;height:40px;">
-                                {{ strtoupper(mb_substr(auth()->user()->first_name ?? auth()->user()->name ?? 'U', 0, 1)) }}
-                            </div>
+                            <img src="{{ auth()->user()->profile_photo_url }}" 
+                                 alt="{{ auth()->user()->name }}"
+                                 class="rounded-circle"
+                                 style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li class="px-3 py-2 small text-muted">{{ auth()->user()->email }}</li>
                             <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Edit Profile</a></li>
                             <li><a class="dropdown-item" href="{{ route('orders.index') }}">My Orders</a></li>
                             <li><hr class="dropdown-divider"></li>

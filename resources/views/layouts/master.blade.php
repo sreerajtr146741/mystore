@@ -175,9 +175,11 @@
 
             @auth
                 <div class="dropdown">
-                    <a href="#" class="right-item dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-fill"></i>
-                        <span>{{ auth()->user()->first_name }}</span>
+                    <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown">
+                        <img src="{{ auth()->user()->profile_photo_url }}" 
+                             alt="{{ auth()->user()->name }}"
+                             class="rounded-circle"
+                             style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                         <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Profile</a></li>
