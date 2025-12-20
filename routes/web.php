@@ -154,7 +154,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show'); // Added show route
     Route::patch('/users/{id}/toggle', [UserController::class, 'toggleStatus'])->name('users.toggle');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
-    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
