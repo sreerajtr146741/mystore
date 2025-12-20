@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Role
 {
-    // Use as: ->middleware('role:admin') or ->middleware('role:admin,seller')
+        // Use as: ->middleware('role:admin') or ->middleware('role:admin,seller')
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $user = $request->user();

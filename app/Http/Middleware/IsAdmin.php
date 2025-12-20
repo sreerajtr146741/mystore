@@ -16,7 +16,7 @@ class IsAdmin
             return redirect()->route('login');
         }
 
-        // Check Model Role
+         // Check Model Role
         if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
             return $next($request);
         }
