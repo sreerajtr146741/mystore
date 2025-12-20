@@ -28,7 +28,7 @@ class SellerApplication extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Accessor: Check if pending/approved/rejected
+     // Accessor: Check if pending/approved/rejected
     public function isPending()   { return $this->status === 'pending'; }
     public function isApproved()  { return $this->status === 'approved'; }
     public function isRejected()  { return $this->status === 'rejected'; }

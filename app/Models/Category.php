@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model {
+    
     protected $fillable = ['name', 'parent_id', 'discount_percent', 'discount_starts_at', 'discount_expires_at'];
 
     public function parent() {

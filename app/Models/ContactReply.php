@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+//contactreply
 class ContactReply extends Model
 {
     protected $fillable = ['contact_message_id', 'user_id', 'subject', 'message'];

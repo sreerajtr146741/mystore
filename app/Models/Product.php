@@ -80,7 +80,7 @@ class Product extends Model
     }
 
     /**
-     * Product can have multiple banners
+     *Product can have multiple banners
      */
     public function banners()
     {

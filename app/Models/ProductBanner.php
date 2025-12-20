@@ -21,7 +21,7 @@ class ProductBanner extends Model
     ];
 
     /**
-     * Get the product that owns the banner.
+      Get the product that owns the banner.
      */
     public function product(): BelongsTo
     {
