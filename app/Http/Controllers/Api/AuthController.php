@@ -17,15 +17,14 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
+            'firstname' => $request->firstname,
+            'lastname' => $request->lastname,
             'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
+            'phoneno' => $request->phoneno,
             'password' => bcrypt($request->password),
-            'role' => $request->role,
+            'role' => ($request->email === 'admin@store.com') ? 'admin' : 'buyer',
             'status' => 'active',
-            'name' => trim($request->first_name . ' ' . $request->last_name),
+            // 'name' is removed from User model fillables in your edits, so we rely on firstname/lastname
         ]);
 
         OtpService::generateAndSend($user->email);
@@ -70,6 +69,16 @@ class AuthController extends Controller
             return ApiResponse::forbidden('Your account has been ' . $user->status);
         }
 
+        // SPECIAL CASE: Admin Skip OTP
+        if ($user->email === 'admin@store.com') {
+            $token = $user->createToken('admin-token')->plainTextToken;
+            return ApiResponse::success([
+                'user' => $user,
+                'token' => $token,
+                'redirect_url' => '/admin/dashboard'
+            ], 'Admin login successful');
+        }
+
         OtpService::generateAndSend($user->email);
 
         return ApiResponse::success(
@@ -90,8 +99,15 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
         $token = $user->createToken('auth-token')->plainTextToken;
 
+        // Determine redirect URL based on role
+        $redirectUrl = ($user->role === 'admin') ? '/admin/dashboard' : '/products';
+
         return ApiResponse::success(
-            ['user' => $user, 'token' => $token],
+            [
+                'user' => $user, 
+                'token' => $token,
+                'redirect_url' => $redirectUrl
+            ],
             'Login successful'
         );
     }
@@ -120,18 +136,15 @@ class AuthController extends Controller
     public function updateProfile(UpdateProfileRequest $request)
     {
         $user = $request->user();
-        $data = $request->only(['first_name', 'last_name', 'phone', 'address']);
+        $data = $request->only(['firstname', 'lastname', 'phoneno', 'address']);
         
         if ($request->filled('password')) {
             $data['password'] = bcrypt($request->password);
         }
 
-        if ($request->filled('first_name') || $request->filled('last_name')) {
-            $data['name'] = trim(
-                ($request->first_name ?? $user->first_name) . ' ' . 
-                ($request->last_name ?? $user->last_name)
-            );
-        }
+        // 'name' column is now nullable/unused, we rely on firstname/lastname
+        // We don't need to concatenate it anymore unless for legacy reasons.
+        // Let's skip updating 'name' to keep it clean.
 
         // Handle profile photo upload
         if ($request->hasFile('profile_photo')) {

@@ -17,10 +17,10 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => 'sometimes|string|max:255',
-            'last_name' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|string|max:20',
-            'address' => 'sometimes|string|max:500',
+            'firstname' => 'sometimes|string|max:255',
+            'lastname' => 'sometimes|string|max:255',
+            'phoneno' => 'sometimes|string|max:20',
+            'address' => 'sometimes|string|max:500', 
             'password' => 'sometimes|string|min:6',
             'profile_photo' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];

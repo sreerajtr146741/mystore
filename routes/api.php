@@ -41,7 +41,13 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
 // Contact
+// Contact
 Route::post('/contact', [ContactController::class, 'store']);
+
+// Authentication (Public Shortcuts)
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/verify-login', [AuthController::class, 'verifyLoginOtp']);
 
 /*
 |--------------------------------------------------------------------------
@@ -81,8 +87,8 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // User Profile
     Route::get('/profile', [AuthController::class, 'profile']);
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
-    Route::post('/profile/photo', [AuthController::class, 'updateProfile']); // For multipart/form-data
+    Route::match(['put', 'post'], '/profile', [AuthController::class, 'updateProfile']); // Allow POST too
+    // Route::post('/profile/photo', ...); // Redundant if above handles it, but keeping for safety
     
     // Cart Management
     Route::get('/cart', [CartController::class, 'index']);

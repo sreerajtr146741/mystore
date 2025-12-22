@@ -24,6 +24,13 @@ class LoginRequest extends FormRequest
 
     protected function failedValidation(Validator $validator)
     {
+        \Illuminate\Support\Facades\Log::error('Login Validation Failed', [
+            'content_type' => $this->header('Content-Type'),
+            'input' => $this->all(),
+            'raw_content' => $this->getContent(),
+            'errors' => $validator->errors()->toArray()
+        ]);
+
         throw new HttpResponseException(
             ApiResponse::validationError($validator->errors()->toArray())
         );
