@@ -30,6 +30,41 @@ class DashboardController extends Controller
             'orders_processing' => Order::where('status', 'processing')->count(),
             'orders_shipped' => Order::where('status', 'shipped')->count(),
             'orders_delivered' => Order::where('status', 'delivered')->count(),
+            // Today's data
+            'new_today' => Product::whereDate('created_at', today())->count(),
+            'today_revenue' => Order::whereDate('created_at', today())->sum('total'),
+        ];
+
+        // Alerts (low stock products)
+        $alerts = [
+            'low_stock' => Product::where('stock', '<=', 10)->where('status', 'active')->count(),
+        ];
+
+        // User Statistics
+        $userStats = [
+            'buyers' => User::where('role', 'buyer')->count(),
+            'new_today' => User::whereDate('created_at', today())->count(),
+            'admins' => User::where('role', 'admin')->count(),
+            'sellers' => User::where('role', 'seller')->count(),
+            'active_30d' => User::where('role', 'buyer')
+                ->where('updated_at', '>=', now()->subDays(30))
+                ->count(),
+            'growth' => '+0%', // You can calculate actual growth if needed
+        ];
+
+        // Revenue growth (comparing today vs yesterday)
+        $yesterdayRevenue = Order::whereDate('created_at', today()->subDay())->sum('total');
+        $todayRevenue = $stats['today_revenue'];
+        $revenueGrowth = $yesterdayRevenue > 0 
+            ? round((($todayRevenue - $yesterdayRevenue) / $yesterdayRevenue) * 100, 2) 
+            : 0;
+        $revenue = [
+            'growth' => ($revenueGrowth >= 0 ? '+' : '') . $revenueGrowth . '%',
+        ];
+
+        // Admin extras
+        $adminExtras = [
+            'pending_orders' => Order::whereIn('status', ['placed', 'processing'])->count(),
         ];
 
         // Recent Orders
@@ -56,6 +91,6 @@ class DashboardController extends Controller
             ];
         }
 
-        return view('admin.dashboard', compact('stats', 'recentOrders', 'topProducts', 'monthlyRevenue'));
+        return view('admin.dashboard', compact('stats', 'recentOrders', 'topProducts', 'monthlyRevenue', 'alerts', 'userStats', 'revenue', 'adminExtras'));
     }
 }

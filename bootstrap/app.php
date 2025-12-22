@@ -13,9 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Register middleware aliases
         $middleware->alias([
-            'role'   => \App\Http\Middleware\Role::class,     // <-- ADD THIS
-            'admin'  => \App\Http\Middleware\IsAdmin::class,  // (optional, if you use it)
-            'seller' => \App\Http\Middleware\IsSeller::class, // (optional, if you use it)
+            'role'      => \App\Http\Middleware\Role::class,     // <-- ADD THIS
+            'admin'     => \App\Http\Middleware\IsAdmin::class,  // (optional, if you use it)
+            'seller'    => \App\Http\Middleware\IsSeller::class, // (optional, if you use it)
+            'admin.api' => \App\Http\Middleware\AdminApiMiddleware::class,
         ]);
 
         // $middleware->redirectGuestsTo(fn () => route('login'));

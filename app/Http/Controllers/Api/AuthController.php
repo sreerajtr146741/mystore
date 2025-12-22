@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\OtpService;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -14,18 +14,8 @@ class AuthController extends Controller
     /**
      * Register a new user (sends OTP)
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required',
-            'address' => 'required',
-            'password' => 'required|min:6',
-            'role' => 'required|in:buyer,seller',
-        ]);
-
         $user = User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -40,103 +30,70 @@ class AuthController extends Controller
 
         OtpService::generateAndSend($user->email);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration successful. OTP sent to your email.',
-            'data' => ['email' => $user->email]
-        ], 201);
+        return ApiResponse::created(
+            ['email' => $user->email],
+            'Registration successful. OTP sent to your email.'
+        );
     }
 
     /**
      * Verify registration OTP and return token
      */
-    public function verifyRegisterOtp(Request $request)
+    public function verifyRegisterOtp(VerifyOtpRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'otp' => 'required|digits:6',
-        ]);
-
         if (!OtpService::verify($request->email, $request->otp)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid or expired OTP'
-            ], 401);
+            return ApiResponse::unauthorized('Invalid or expired OTP');
         }
 
         $user = User::where('email', $request->email)->first();
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration verified successfully',
-            'data' => ['user' => $user],
-            'token' => $token
-        ]);
+        return ApiResponse::success(
+            ['user' => $user, 'token' => $token],
+            'Registration verified successfully'
+        );
     }
 
     /**
-      Login user (sends OTP)
+     * Login user (sends OTP)
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
+            return ApiResponse::unauthorized('Invalid credentials');
         }
 
         // Check if user is suspended or blocked
         if (in_array($user->status, ['suspended', 'blocked'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your account has been ' . $user->status
-            ], 403);
+            return ApiResponse::forbidden('Your account has been ' . $user->status);
         }
 
         OtpService::generateAndSend($user->email);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'OTP sent to your email',
-            'data' => ['email' => $user->email]
-        ]);
+        return ApiResponse::success(
+            ['email' => $user->email],
+            'OTP sent to your email'
+        );
     }
 
     /**
      * Verify login OTP and return token
      */
-    public function verifyLoginOtp(Request $request)
+    public function verifyLoginOtp(VerifyOtpRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'otp' => 'required|digits:6',
-        ]);
-
         if (!OtpService::verify($request->email, $request->otp)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid or expired OTP'
-            ], 401);
+            return ApiResponse::unauthorized('Invalid or expired OTP');
         }
 
         $user = User::where('email', $request->email)->first();
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => ['user' => $user],
-            'token' => $token
-        ]);
+        return ApiResponse::success(
+            ['user' => $user, 'token' => $token],
+            'Login successful'
+        );
     }
 
     /**
@@ -146,10 +103,7 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully'
-        ]);
+        return ApiResponse::success(null, 'Logged out successfully');
     }
 
     /**
@@ -157,27 +111,15 @@ class AuthController extends Controller
      */
     public function profile(Request $request)
     {
-        return response()->json([
-            'success' => true,
-            'data' => ['user' => $request->user()]
-        ]);
+        return ApiResponse::success(['user' => $request->user()]);
     }
 
     /**
      * Update user profile
      */
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateProfileRequest $request)
     {
         $user = $request->user();
-
-        $request->validate([
-            'first_name' => 'sometimes|string|max:255',
-            'last_name' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|string',
-            'address' => 'sometimes|string',
-            'password' => 'sometimes|min:6',
-        ]);
-
         $data = $request->only(['first_name', 'last_name', 'phone', 'address']);
         
         if ($request->filled('password')) {
@@ -191,13 +133,18 @@ class AuthController extends Controller
             );
         }
 
+        // Handle profile photo upload
+        if ($request->hasFile('profile_photo')) {
+            $path = $request->file('profile_photo')->store('profile_photos', 'public');
+            $data['profile_photo_url'] = asset('storage/' . $path);
+        }
+
         $user->update($data);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Profile updated successfully',
-            'data' => ['user' => $user->fresh()]
-        ]);
+        return ApiResponse::success(
+            ['user' => $user->fresh()],
+            'Profile updated successfully'
+        );
     }
 
     /**
@@ -210,47 +157,34 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No account found with this email'
-            ], 404);
+            return ApiResponse::notFound('No account found with this email');
         }
 
         OtpService::generateAndSend($user->email);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password reset OTP sent to your email',
-            'data' => ['email' => $user->email]
-        ]);
+        return ApiResponse::success(
+            ['email' => $user->email],
+            'Password reset OTP sent to your email'
+        );
     }
 
     /**
      * Verify password reset OTP
      */
-    public function verifyPasswordOtp(Request $request)
+    public function verifyPasswordOtp(VerifyOtpRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'otp' => 'required|digits:6'
-        ]);
-
         if (!OtpService::verify($request->email, $request->otp)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid or expired OTP'
-            ], 401);
+            return ApiResponse::unauthorized('Invalid or expired OTP');
         }
 
         // Generate a temporary token for password reset
         $user = User::where('email', $request->email)->first();
         $resetToken = $user->createToken('password-reset', ['password-reset'])->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'OTP verified. Use the reset token to set new password.',
-            'data' => ['reset_token' => $resetToken]
-        ]);
+        return ApiResponse::success(
+            ['reset_token' => $resetToken],
+            'OTP verified. Use the reset token to set new password.'
+        );
     }
 
     /**
@@ -266,10 +200,7 @@ class AuthController extends Controller
 
         // Verify this is a password-reset token
         if (!$user->currentAccessToken()->can('password-reset')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid reset token'
-            ], 403);
+            return ApiResponse::forbidden('Invalid reset token');
         }
 
         $user->update(['password' => bcrypt($request->password)]);
@@ -277,9 +208,51 @@ class AuthController extends Controller
         // Revoke the reset token
         $user->currentAccessToken()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password reset successfully. Please login with your new password.'
-        ]);
+        return ApiResponse::success(
+            null,
+            'Password reset successfully. Please login with your new password.'
+        );
+    }
+
+    /**
+     * Resend registration OTP
+     */
+    public function resendRegisterOtp(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return ApiResponse::notFound('No account found with this email');
+        }
+
+        OtpService::generateAndSend($user->email);
+
+        return ApiResponse::success(
+            ['email' => $user->email],
+            'OTP resent successfully'
+        );
+    }
+
+    /**
+     * Resend login OTP
+     */
+    public function resendLoginOtp(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return ApiResponse::notFound('No account found with this email');
+        }
+
+        OtpService::generateAndSend($user->email);
+
+        return ApiResponse::success(
+            ['email' => $user->email],
+            'OTP resent successfully'
+        );
     }
 }
