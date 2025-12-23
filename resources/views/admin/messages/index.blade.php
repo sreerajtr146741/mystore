@@ -74,81 +74,6 @@
                                     </div>
                                 </td>
                             </tr>
-
-                            <!-- View Modal -->
-                            <div class="modal fade" id="msgModal{{$msg->id}}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-                                    <div class="modal-content" style="background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15);">
-                                        <div class="modal-header border-bottom border-white border-opacity-10 p-4">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div class="bg-info bg-opacity-10 p-2 rounded-3 text-info">
-                                                    <i class="bi bi-chat-quote-fill fs-4"></i>
-                                                </div>
-                                                <h5 class="modal-title fw-bold text-white mb-0">{{ $msg->subject }}</h5>
-                                            </div>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body p-4" style="max-height: 60vh; overflow-y: auto;">
-                                            <div class="row g-4 mb-4">
-                                                <div class="col-md-6">
-                                                    <label class="small text-info text-uppercase tracking-wider fw-bold">Sender Details</label>
-                                                    <div class="text-white fw-bold">{{ $msg->first_name }} {{ $msg->last_name }}</div>
-                                                    <div class="text-info small">{{ $msg->email }}</div>
-                                                </div>
-                                                <div class="col-md-6 text-md-end">
-                                                    <label class="small text-info text-uppercase tracking-wider fw-bold">Timestamp</label>
-                                                    <div class="text-white">{{ $msg->created_at->format('F d, Y • h:i A') }}</div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="p-4 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);">
-                                                <label class="small text-info text-uppercase tracking-wider fw-bold mb-2">Message Content</label>
-                                                <p class="mb-0 lh-lg" style="white-space: pre-line; color: #ffffff;">{{ $msg->message }}</p>
-                                            </div>
-
-                                            @if($msg->replies->count() > 0)
-                                                <div class="mt-4 pt-4 border-top border-white border-opacity-10">
-                                                    <h6 class="text-info text-uppercase tracking-widest fw-bold mb-3 small"><i class="bi bi-reply-all-fill me-2"></i>Official Responses</h6>
-                                                    <div class="d-flex flex-column gap-3">
-                                                        @foreach($msg->replies as $reply)
-                                                            <div class="p-3 rounded-4" style="background: rgba(6, 182, 212, 0.05); border: 1px solid rgba(6, 182, 212, 0.2);">
-                                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                                    <small class="fw-bold text-info">{{ $reply->subject }}</small>
-                                                                    <small class="text-white-50">{{ $reply->created_at->format('M d, h:i A') }}</small>
-                                                                </div>
-                                                                <p class="mb-0 small" style="white-space: pre-line; color: #f0f0f0;">{{ $reply->message }}</p>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="modal-footer border-top border-white border-opacity-10 p-4 justify-content-between">
-                                            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close Window</button>
-                                            
-                                            <button class="btn btn-info rounded-pill px-4 fw-bold shadow-lg" type="button" data-bs-toggle="collapse" data-bs-target="#replyForm{{$msg->id}}">
-                                                <i class="bi bi-reply-fill me-1"></i>Send Response
-                                            </button>
-                                        </div>
-                                        <div class="collapse p-4 border-top border-info border-opacity-10" style="background: rgba(6, 182, 212, 0.05);" id="replyForm{{$msg->id}}">
-                                            <form action="{{ route('admin.messages.reply', $msg->id) }}" method="POST">
-                                                @csrf
-                                                <div class="mb-3">
-                                                    <label class="form-label small text-info fw-bold">Response Subject</label>
-                                                    <input type="text" name="subject" class="form-control text-white" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" value="Re: {{ $msg->subject }}" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label small text-info fw-bold">Message Content</label>
-                                                    <textarea name="message" class="form-control text-white" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" rows="4" placeholder="Type your response here..." required></textarea>
-                                                </div>
-                                                <div class="text-end">
-                                                    <button type="submit" class="btn btn-info rounded-pill px-4 fw-bold">Send Reply <i class="bi bi-send-fill ms-1"></i></button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         @empty
                             <tr>
                                 <td colspan="5" class="text-center py-5 text-white-50">
@@ -168,4 +93,130 @@
         </div>
     </div>
 </div>
+
+<!-- Modals outside the table -->
+@foreach($messages as $msg)
+    <div class="modal fade" id="msgModal{{$msg->id}}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-xl">
+            <div class="modal-content" style="background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15);">
+                <div class="modal-header border-bottom border-white border-opacity-10 p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-info bg-opacity-10 p-2 rounded-3 text-info">
+                            <i class="bi bi-chat-quote-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0">{{ $msg->subject }}</h5>
+                            <small class="text-white-50">
+                                @if($msg->replies->count() > 0)
+                                    <i class="bi bi-check2-all me-1"></i>Conversation Thread
+                                @else
+                                    <i class="bi bi-envelope-fill me-1"></i>New Inquiry
+                                @endif
+                            </small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" style="max-height: 65vh; overflow-y: auto;">
+                    {{-- Sender Information --}}
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-8">
+                            <label class="small text-info text-uppercase tracking-wider fw-bold mb-2">
+                                <i class="bi bi-person-circle me-1"></i>Sender Information
+                            </label>
+                            <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="small text-white-50 mb-1">Full Name</div>
+                                        <div class="text-white fw-bold">{{ $msg->first_name }} {{ $msg->last_name }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="small text-white-50 mb-1">Email Address</div>
+                                        <div class="text-info">{{ $msg->email }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-info text-uppercase tracking-wider fw-bold mb-2">
+                                <i class="bi bi-clock-history me-1"></i>Received At
+                            </label>
+                            <div class="p-3 rounded-3 text-center" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                <div class="text-white fw-bold">{{ $msg->created_at->format('M d, Y') }}</div>
+                                <div class="text-white-50 small">{{ $msg->created_at->format('h:i A') }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Original Message --}}
+                    <div class="mb-4">
+                        <label class="small text-info text-uppercase tracking-wider fw-bold mb-2">
+                            <i class="bi bi-chat-left-text me-1"></i>Customer Message
+                        </label>
+                        <div class="p-4 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <div class="small text-white-50 mb-2">Subject: <span class="text-white">{{ $msg->subject }}</span></div>
+                            <hr class="border-white border-opacity-10 my-3">
+                            <p class="mb-0 lh-lg" style="white-space: pre-line; color: #ffffff;">{{ $msg->message }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Reply Thread --}}
+                    @if($msg->replies->count() > 0)
+                        <div class="mt-4 pt-4 border-top border-white border-opacity-10">
+                            <label class="small text-success text-uppercase tracking-wider fw-bold mb-3">
+                                <i class="bi bi-reply-all-fill me-1"></i>Admin Responses ({{ $msg->replies->count() }})
+                            </label>
+                            <div class="d-flex flex-column gap-3">
+                                @foreach($msg->replies as $index => $reply)
+                                    <div class="p-3 rounded-4 position-relative" style="background: rgba(6, 182, 212, 0.05); border: 1px solid rgba(6, 182, 212, 0.2);">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small">
+                                                    Reply #{{ $index + 1 }}
+                                                </span>
+                                                <span class="fw-bold text-info ms-2">{{ $reply->subject }}</span>
+                                            </div>
+                                            <small class="text-white-50">{{ $reply->created_at->format('M d, Y • h:i A') }}</small>
+                                        </div>
+                                        <p class="mb-0" style="white-space: pre-line; color: #f0f0f0;">{{ $reply->message }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <div class="alert alert-warning bg-warning bg-opacity-10 border border-warning border-opacity-20 text-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>No responses yet.</strong> Click "Send Response" below to reply to this inquiry.
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer border-top border-white border-opacity-10 p-4 justify-content-between">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Close
+                    </button>
+                    
+                    <button class="btn btn-info rounded-pill px-4 fw-bold shadow-lg" type="button" data-bs-toggle="collapse" data-bs-target="#replyForm{{$msg->id}}">
+                        <i class="bi bi-reply-fill me-1"></i>Send Response
+                    </button>
+                </div>
+                <div class="collapse p-4 border-top border-info border-opacity-10" style="background: rgba(6, 182, 212, 0.05);" id="replyForm{{$msg->id}}">
+                    <form action="{{ route('admin.messages.reply', $msg->id) }}" method="POST">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label small text-info fw-bold">Response Subject</label>
+                            <input type="text" name="subject" class="form-control text-white" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" value="Re: {{ $msg->subject }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-info fw-bold">Message Content</label>
+                            <textarea name="message" class="form-control text-white" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);" rows="4" placeholder="Type your response here..." required></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-info rounded-pill px-4 fw-bold">Send Reply <i class="bi bi-send-fill ms-1"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+@endforeach
 @endsection
