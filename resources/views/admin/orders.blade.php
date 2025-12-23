@@ -14,106 +14,152 @@
         .table-card { box-shadow: none; border: none; background: transparent; }
         .badge-count { font-size: 0.75em; padding: 2px 6px; border-radius: 10px; margin-left: 5px; background: rgba(255,255,255,0.1); color: #fff; }
         .nav-link.active .badge-count { background: #fff; color: #000; }
+
+        /* Custom Dropdown Polish for Glass theme */
+        .dropdown-menu { background: #1e293b !important; border: 1px solid rgba(255,255,255,0.2) !important; box-shadow: 0 15px 35px rgba(0,0,0,0.6) !important; padding: 0.5rem; }
+        .dropdown-item { color: #e2e8f0 !important; transition: all 0.2s ease; border-radius: 6px; margin: 2px 0; }
+        .dropdown-item:hover { background: #0ea5e9 !important; color: #fff !important; font-weight: 500; }
+        .dropdown-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 0.5rem 0; }
+        .dropdown-header { color: #94a3b8 !important; font-size: 0.75rem !important; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 0.5rem 1rem; }
+        
+        .nav-scroller { scrollbar-width: none; -ms-overflow-style: none; }
+        .nav-scroller::-webkit-scrollbar { display: none; }
+        .hover-bg-glass:hover { background: rgba(255,255,255,0.05) !important; }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-dark mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ route('admin.dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
-    <span class="navbar-text text-white">Order Management</span>
+@php
+    $palette = ['#0ea5e9','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#14b8a6','#84cc16'];
+    $color = $palette[(crc32(auth()->user()->name) % count($palette))];
+    $initials = collect(explode(' ', auth()->user()->name))->map(fn($p)=>mb_substr($p,0,1))->take(2)->implode('');
+@endphp
 
+<nav class="navbar navbar-expand-lg navbar-dark border-bottom border-white border-opacity-10 py-3 sticky-top" style="background: rgba(15, 23, 42, 0.8) !important; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="{{ route('admin.dashboard') }}">
+      <div class="bg-info bg-opacity-10 p-2 rounded-3 text-info border border-info border-opacity-25" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+        <i class="bi bi-speedometer2"></i>
+      </div>
+      <span class="text-white tracking-tight">Admin<span class="text-info">Portal</span></span>
+    </a>
+
+    <div class="d-flex align-items-center gap-2 ms-auto">
+        <a href="{{ route('products.index') }}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+            <i class="bi bi-shop me-1"></i>View Store
+        </a>
+
+        <div class="dropdown">
+            <button class="btn btn-glass d-flex align-items-center gap-2 shadow-sm" type="button" data-bs-toggle="dropdown">
+                <span class="avatar shadow-sm border border-white border-opacity-25" style="background: {{ $color }}; width: 32px; height: 32px; font-size: 0.8rem;">{{ $initials }}</span>
+                <span class="text-white small fw-semibold d-none d-md-inline">{{ auth()->user()->name }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
+                <li><a href="{{ route('profile.edit') }}" class="dropdown-item py-2 d-flex align-items-center gap-2"><i class="bi bi-person-circle fs-5 text-info"></i> My Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="dropdown-item py-2 text-danger d-flex align-items-center gap-2"><i class="bi bi-box-arrow-right fs-5"></i> Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
   </div>
 </nav>
 
-<div class="container pb-5">
+<div class="page-wrap container position-relative mt-5">
     
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-success border-4" role="alert">
+        <div class="alert alert-success alert-dismissible fade show shadow-lg border-0 border-start border-success border-4 mb-4" role="alert" style="background: rgba(25, 135, 84, 0.1); color: #2ecc71;">
             <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="mb-0 fw-bold text-gray-800">Your Orders</h3>
-        <form action="{{ route('admin.orders') }}" method="GET" class="d-flex gap-2" role="search">
-            @if(request('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
-            <input class="form-control" type="search" name="search" placeholder="Search Order ID or Email" value="{{ request('search') }}" aria-label="Search">
-            <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-5 gap-3">
+        <div>
+            <h2 class="section-title mb-1 fw-bold text-white"><i class="bi bi-receipt-cutoff me-2 text-info"></i>Order Management</h2>
+            <p class="text-white-50 small mb-0">Monitor and process store transactions</p>
+        </div>
+        
+        <form action="{{ route('admin.orders') }}" method="GET" class="w-100" style="max-width: 400px;">
+            <div class="input-group">
+                <span class="input-group-text bg-white bg-opacity-5 border-white border-opacity-10 text-white-50"><i class="bi bi-search"></i></span>
+                @if(request('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
+                <input class="form-control bg-white bg-opacity-5 border-white border-opacity-10 text-white shadow-none" type="search" name="search" placeholder="Order ID or Email..." value="{{ request('search') }}">
+                <button class="btn btn-info px-4 fw-bold" type="submit">Filter</button>
+            </div>
         </form>
     </div>
 
-    <!-- Tabs -->
-    <ul class="nav nav-tabs mb-4 px-2 border-bottom">
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'all' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'all']) }}">
-                All <span class="badge-count">{{ $counts['all'] }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'placed' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'placed']) }}">
-                New <span class="badge-count">{{ $counts['placed'] }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'processing' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'processing']) }}">
-                Processing <span class="badge-count">{{ $counts['processing'] }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'shipped' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'shipped']) }}">
-                Shipped <span class="badge-count">{{ $counts['shipped'] }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'delivered' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'delivered']) }}">
-                Delivered <span class="badge-count">{{ $counts['delivered'] }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'cancelled' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'cancelled']) }}">
-                Cancelled <span class="badge-count">{{ $counts['cancelled'] }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'return_requested' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'return_requested']) }}">
-                Requests <span class="badge-count">{{ $counts['return_requested'] }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ $status == 'returned' ? 'active' : '' }}" href="{{ route('admin.orders', ['status' => 'returned']) }}">
-                Returned <span class="badge-count">{{ $counts['returned'] }}</span>
-            </a>
-        </li>
-    </ul>
+    <!-- Tabs (Glass Navigation) -->
+    <div class="card-glass mb-4 overflow-hidden">
+        <div class="nav-scroller">
+            <ul class="nav nav-pills p-2 gap-2 flex-nowrap" style="background: rgba(255,255,255,0.03);">
+                @php
+                    $tabs = [
+                        'all' => ['label' => 'All Orders', 'icon' => 'grid'],
+                        'placed' => ['label' => 'New', 'icon' => 'plus-circle'],
+                        'processing' => ['label' => 'Processing', 'icon' => 'gear-wide-connected'],
+                        'shipped' => ['label' => 'Shipped', 'icon' => 'truck'],
+                        'delivered' => ['label' => 'Delivered', 'icon' => 'check-circle'],
+                        'cancelled' => ['label' => 'Cancelled', 'icon' => 'x-circle'],
+                        'return_requested' => ['label' => 'Requests', 'icon' => 'arrow-return-left'],
+                        'returned' => ['label' => 'Returned', 'icon' => 'box-arrow-left'],
+                    ];
+                @endphp
+                @foreach($tabs as $key => $tab)
+                <li class="nav-item">
+                    <a class="nav-link rounded-3 py-2 px-3 d-flex align-items-center gap-2 {{ $status == $key ? 'bg-info text-white fw-bold active' : 'text-white-50 hover-bg-glass' }}" 
+                       href="{{ route('admin.orders', ['status' => $key]) }}">
+                        <i class="bi bi-{{ $tab['icon'] }}"></i>
+                        <span>{{ $tab['label'] }}</span>
+                        <span class="badge {{ $status == $key ? 'bg-white text-info' : 'bg-white bg-opacity-10 text-white' }} rounded-pill" style="font-size: 0.7rem;">{{ $counts[$key] }}</span>
+                    </a>
+                </li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
 
-    <!-- Order List -->
-    <div class="card table-card">
+    <!-- Order List (Premium Table) -->
+    <div class="card-glass border-0 overflow-hidden shadow-2xl">
         <div class="table-responsive">
-            <table class="table align-middle mb-0 table-hover">
-                <thead class="bg-light text-secondary small text-uppercase">
-                    <tr>
-                        <th class="ps-4">Order Details</th>
-                        <th>Dates</th>
-                        <th>Status</th>
-                        <th>Total</th>
-                        <th class="text-end pe-4">Actions</th>
+            <table class="table table-hover align-middle mb-0 text-white border-0">
+                <thead style="background: rgba(255,255,255,0.05);">
+                    <tr class="border-0">
+                        <th class="ps-4 py-3 text-white-50 small text-uppercase fw-bold tracking-widest border-0">Order ID & Customer</th>
+                        <th class="py-3 text-white-50 small text-uppercase fw-bold tracking-widest border-0">Dates</th>
+                        <th class="py-3 text-white-50 small text-uppercase fw-bold tracking-widest border-0">Status</th>
+                        <th class="py-3 text-white-50 small text-uppercase fw-bold tracking-widest border-0 text-center">Total Amount</th>
+                        <th class="text-end pe-4 py-3 text-white-50 small text-uppercase fw-bold tracking-widest border-0">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="order-rows">
+                <tbody id="order-rows" class="border-0">
                     @include('admin.orders.partials.row', ['orders' => $orders])
                 </tbody>
             </table>
         </div>
+        
+        @if($orders->isEmpty())
+            <div class="text-center py-5 text-white-50 bg-white bg-opacity-5">
+                <i class="bi bi-inbox display-4 d-block mb-3 opacity-25"></i>
+                <p class="mb-0">No active orders found in this category.</p>
+            </div>
+        @endif
+
         @if($orders->hasMorePages())
             <div id="loading-spinner" class="text-center py-4 d-none">
-                <div class="spinner-border text-primary" role="status"></div>
+                <div class="spinner-border text-info" role="status"></div>
             </div>
-            <div id="sentinel" style="height:20px;"></div>
+            <div id="sentinel" style="height:2px;"></div>
             <div id="pagination-data" data-next-url="{{ $orders->nextPageUrl() }}" style="display:none;"></div>
         @endif
     </div>
+
+</div>
 
 </div>
 

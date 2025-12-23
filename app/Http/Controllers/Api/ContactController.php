@@ -21,8 +21,13 @@ class ContactController extends Controller
             'message' => 'required|string|max:2000'
         ]);
 
+        $parts = explode(' ', $request->name, 2);
+        $firstName = $parts[0];
+        $lastName = isset($parts[1]) ? $parts[1] : '';
+
         $contact = ContactMessage::create([
-            'name' => $request->name,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'email' => $request->email,
             'subject' => $request->subject,
             'message' => $request->message

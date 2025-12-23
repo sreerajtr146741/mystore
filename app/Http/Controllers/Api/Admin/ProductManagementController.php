@@ -16,7 +16,7 @@ class ProductManagementController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        $query = Product::with('linkedCategory');
 
         // Filter by category
         if ($request->filled('category_id')) {
@@ -47,7 +47,7 @@ class ProductManagementController extends Controller
      */
     public function show($id)
     {
-        $product = Product::with(['category', 'banners'])->find($id);
+        $product = Product::with(['linkedCategory', 'banners'])->find($id);
 
         if (!$product) {
             return ApiResponse::notFound('Product not found');

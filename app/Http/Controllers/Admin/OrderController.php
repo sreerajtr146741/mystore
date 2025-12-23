@@ -32,7 +32,11 @@ class OrderController extends Controller
 
         // Filter by Status (if not 'all')
         if ($status !== 'all') {
-            $query->where('status', $status);
+            if ($status === 'placed') {
+                $query->whereIn('status', ['placed', 'pending']);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         $orders = $query->paginate(12)->withQueryString();
@@ -44,7 +48,7 @@ class OrderController extends Controller
         // Calculate Counts
         $counts = [
             'all' => Order::count(),
-            'placed' => Order::where('status', 'placed')->count(),
+            'placed' => Order::whereIn('status', ['placed', 'pending'])->count(), // Include pending in New
             'processing' => Order::where('status', 'processing')->count(),
             'shipped' => Order::where('status', 'shipped')->count(),
             'delivered' => Order::where('status', 'delivered')->count(),

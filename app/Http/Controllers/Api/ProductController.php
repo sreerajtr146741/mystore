@@ -51,7 +51,7 @@ class ProductController extends Controller
 
         // Pagination
         $perPage = min($request->get('per_page', 15), 50); // Max 50 per page
-        $products = $query->with('category')->paginate($perPage);
+        $products = $query->with('linkedCategory')->paginate($perPage);
 
         return ApiResponse::success($products);
     }
@@ -61,7 +61,9 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = Product::with(['category', 'banners'])->find($id);
+        \Illuminate\Support\Facades\Log::info("Product Show Method - ID: " . $id);
+        $product = Product::with(['linkedCategory', 'banners'])->find($id);
+        \Illuminate\Support\Facades\Log::info("Product Found: " . ($product ? 'Yes' : 'No'));
 
         if (!$product) {
             return ApiResponse::notFound('Product not found');

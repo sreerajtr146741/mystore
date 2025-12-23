@@ -1,4 +1,4 @@
-{{-- resources/views/dashboard/index.blade.php --}}
+{{-- resources/views/admin/dashboard.blade.php --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,76 +9,24 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@include('partials.premium-styles')
 
 <style>
-  :root{
-    --glass-bg: rgba(255,255,255,0.08);
-    --glass-bd: rgba(255,255,255,0.15);
-    --ink-weak: #cbd5e1;
-    --ink: #e2e8f0;
-  }
-  body {
-    margin:0;
-    background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#1e40af 100%);
-    min-height:100vh; overflow-x:hidden; font-family:'Segoe UI',sans-serif;
-  }
-  .text-gradient{ background:linear-gradient(90deg,#00d4ff,#ff00c8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .card-glass{ background:var(--glass-bg); backdrop-filter:blur(16px); border:1px solid var(--glass-bd); border-radius:20px; }
-  .btn-glass{ background:rgba(255,255,255,0.10); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.20); }
-  .hover-lift:hover{ transform:translateY(-6px) scale(1.01); box-shadow:0 20px 44px rgba(0,0,0,0.45)!important; }
-  .btn-3d:hover{ transform:translateY(-5px) scale(1.02); box-shadow:0 24px 48px rgba(0,0,0,0.4)!important; }
-  .btn-cyan{ background:linear-gradient(135deg,#06b6d4,#0891b2); }
-  .btn-indigo{ background:linear-gradient(135deg,#6366f1,#4f46e5); }
-  .section-title { color:#fff; letter-spacing:.3px; }
+  /* Standalone Dashboard Helpers (not in premium-styles) */
+  .dashboard-card { height: 100%; display: flex; flex-direction: column; }
+  .bento-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
+  .action-icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 1.5rem; }
 
-  /* NAVBAR */
-  .navbar-blur { background:rgba(15,23,42,0.35); backdrop-filter: blur(10px); border-bottom:1px solid rgba(255,255,255,0.12); }
-  .navbar .form-control {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    color:#fff;
-  }
-  .navbar .form-control::placeholder { color: rgba(255,255,255,0.75); }
-  .navbar .input-group-text {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    color:#fff;
-  }
-  .navbar .btn-outline-light { border-color: rgba(255,255,255,0.35); }
-
-  /* content offset */
-  .page-wrap { padding-top: 88px; }
-
-  /* Avatar */
+  /* Avatar Silhouette */
   .avatar {
-    width: 28px; height: 28px; border-radius: 50%;
+    width: 32px; height: 32px; border-radius: 50%;
     display: inline-flex; align-items:center; justify-content:center;
     font-weight:700; color:#fff; user-select:none;
-    border:2px solid #fff;
+    border:2px solid rgba(255,255,255,0.5); overflow: hidden;
   }
-
-  /* Search results panel */
-  .search-panel {
-    position: absolute; left: 50%; transform: translateX(-50%);
-    width: min(720px, 92vw); z-index: 1050;
-  }
-  .search-card { background:#0b1220; border:1px solid rgba(255,255,255,0.15); border-radius:14px; }
-  .search-item:hover { background:#0f172a; }
-
-  /* Rings */
-  .ring {
-    --pct: 0;
-    width: 110px; height: 110px; border-radius: 50%;
-    background:
-      radial-gradient(closest-side, rgba(15,17,21,.92) 78%, transparent 79% 100%),
-      conic-gradient(#22d3ee var(--pct), rgba(255,255,255,.12) 0);
-    display:grid; place-items:center;
-    border:1px solid rgba(255,255,255,.15);
-  }
-  .ring .val { color:#e2e8f0; font-weight:700; font-size:1.25rem; line-height:1; }
-  .ring .lbl { color:#cbd5e1; font-size:.8rem; opacity:.9; }
-  .stat-pill { background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:12px; }
-  .welcome-sub { color:#e5e7eb; opacity:.9; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .text-gradient { background:linear-gradient(90deg,#00d4ff,#ff00c8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 </style>
 </head>
 <body>
@@ -105,9 +53,10 @@
       {{-- Right: Dashboard (disabled) + Profile --}}
       <div class="d-flex align-items-center gap-2 ms-lg-3">
         {{-- Dashboard stays on same page (disabled) --}}
-        <span class="btn btn-outline-light btn-sm disabled">
-          <i class="bi bi-speedometer2 me-1"></i>Dashboard
-        </span>
+        {{-- Dashboard Navbar Link pointing to Store --}}
+        <a href="{{ route('products.index') }}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+          <i class="bi bi-shop me-1"></i>View Store
+        </a>
 
         {{-- Profile dropdown with avatar (photo → fallback initials) --}}
         <div class="dropdown">
@@ -120,11 +69,13 @@
               $color = $palette[(crc32($name) % count($palette))];
             @endphp
             @if($photo)
-              <img src="{{ $photo }}" class="rounded-circle border border-white border-2" width="28" height="28" alt="avatar">
+              <div class="avatar shadow-sm">
+                <img src="{{ $photo }}" alt="avatar">
+              </div>
             @else
-              <span class="avatar" style="background: {{ $color }}">{{ $initials }}</span>
+              <span class="avatar shadow-sm" style="background: {{ $color }}">{{ $initials }}</span>
             @endif
-            <span class="text-white small fw-semibold">{{ $name }}</span>
+            <span class="text-white small fw-semibold d-none d-md-inline">{{ $name }}</span>
           </button>
           <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
             <li>
@@ -158,69 +109,102 @@
 
 <div class="page-wrap container position-relative">
 
-  {{-- WELCOME --}}
-  <div class="text-center text-white mb-5">
-    <h1 class="display-5 fw-bold mb-2">
-      @if(method_exists(auth()->user(),'isAdmin') && auth()->user()->isAdmin())
-        Welcome back, <span class="text-gradient">Super Admin</span>!
-      @else
-        Welcome back, <span class="text-gradient">{{ auth()->user()->name }}</span>!
-      @endif
-    </h1>
-    <p class="lead welcome-sub mb-0">
-      <span class="text-info fw-bold">MyStore</span> command center • 
-      <span class="text-warning">
-        @if(($alerts['low_stock'] ?? 0) > 0)
-          {{ $alerts['low_stock'] }} low-stock products need attention
-        @else
-          All systems normal
-        @endif
-      </span>
-    </p>
-  </div>
+
 
   {{-- ADMIN PANEL --}}
   @if(method_exists(auth()->user(),'isAdmin') && auth()->user()->isAdmin())
   <div class="mb-5">
     <h2 class="section-title mb-3"><i class="bi bi-shield-lock-fill me-2"></i>Admin Dashboard</h2>
 
-    {{-- KPI CARDS — NON-CLICKABLE --}}
+    {{-- KPI CARDS — UNIFORM HEIGHT --}}
+    {{-- KPI CARDS — VERTICAL STACK (2 PER ROW) --}}
     <div class="row g-4 mb-4">
-      <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.users') }}'">
-          <i class="bi bi-people-fill fs-1 opacity-50"></i>
-          <div class="opacity-75 mt-2">Total Users</div>
-          <h2 class="fw-bold">{{ $stats['total_users'] ?? 0 }}</h2>
-          <small class="text-success"><i class="bi bi-graph-up-arrow"></i> {{ $userStats['growth'] ?? '+0%' }}</small>
+      {{-- Total Accounts --}}
+      <div class="col-lg-6 col-md-6">
+        <div class="card-glass hover-lift p-4 text-white d-flex flex-column justify-content-between" style="height: 160px; cursor: pointer;" onclick="location.href='{{ route('admin.users') }}'">
+          <div>
+            <div class="d-flex justify-content-between">
+                <i class="bi bi-people-fill fs-3 text-info opacity-75"></i>
+                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 h-100 align-self-center">Accounts</span>
+            </div>
+            <div class="opacity-75 small text-uppercase fw-bold mt-2">Managed Base</div>
+          </div>
+          <div>
+            <h2 class="fw-bold mb-0 text-white">{{ $stats['total_users'] ?? 0 }}</h2>
+            <div class="small text-info opacity-75 text-truncate"><i class="bi bi-globe me-1"></i>Network Reach</div>
+          </div>
         </div>
       </div>
 
-      <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.products.list') }}'">
-          <i class="bi bi-box-seam fs-1 opacity-50"></i>
-          <div class="opacity-75 mt-2">Total Products</div>
-          <h2 class="fw-bold">{{ $stats['total_products'] ?? 0 }}</h2>
-          <small class="text-info"><i class="bi bi-plus-circle"></i> {{ ($stats['new_today'] ?? 0) }} new today</small>
+      {{-- Total Inventory --}}
+      <div class="col-lg-6 col-md-6">
+        <div class="card-glass hover-lift p-4 text-white d-flex flex-column justify-content-between" style="height: 160px; cursor: pointer;" onclick="location.href='{{ route('admin.products.list') }}'">
+          <div>
+             <div class="d-flex justify-content-between">
+                <i class="bi bi-box-seam-fill fs-3 text-primary opacity-75"></i>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 h-100 align-self-center">Inventory</span>
+            </div>
+            <div class="opacity-75 small text-uppercase fw-bold mt-2">Active Products</div>
+          </div>
+          <div>
+            <h2 class="fw-bold mb-0 text-white">{{ $stats['total_products'] ?? 0 }}</h2>
+            <div class="text-primary-emphasis opacity-75 small text-truncate"><i class="bi bi-plus-circle me-1"></i>{{ $stats['new_today'] ?? 0 }} new today</div>
+          </div>
         </div>
       </div>
 
-      <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.revenue') }}'">
-          <i class="bi bi-currency-rupee fs-1 opacity-50"></i>
-          <div class="opacity-75 mt-2">Today's Revenue</div>
-          <h2 class="fw-bold">₹{{ number_format($stats['today_revenue'] ?? 0) }}</h2>
-          <small class="text-success"><i class="bi bi-graph-up-arrow"></i> {{ $revenue['growth'] ?? '+0%' }}</small>
+      {{-- Aggregate Revenue --}}
+      <div class="col-lg-6 col-md-6">
+        <div class="card-glass hover-lift p-4 text-white d-flex flex-column justify-content-between" style="height: 160px; border: 1px solid rgba(245, 158, 11, 0.3) !important;">
+          <div>
+            <div class="d-flex justify-content-between">
+                <i class="bi bi-bank2 fs-3 text-warning opacity-75"></i>
+                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 h-100 align-self-center">Historical</span>
+            </div>
+            <div class="opacity-75 small text-uppercase fw-bold mt-2 text-truncate">Gross Revenue</div>
+          </div>
+          <div>
+            <h2 class="fw-bold mb-0 text-warning">₹{{ number_format($stats['total_revenue'] ?? 0) }}</h2>
+            <div class="text-white-50 small text-truncate">Lifetime Performance</div>
+          </div>
         </div>
       </div>
 
-      <div class="col-md-6 col-lg-3">
-        <div class="card-glass hover-lift p-4 text-white position-relative" role="button" tabindex="0" onclick="location.href='{{ route('admin.orders') }}'">
-          <i class="bi bi-receipt fs-1 opacity-50"></i>
-          <div class="opacity-75 mt-2">Pending Orders</div>
-          <h2 class="fw-bold">{{ $adminExtras['pending_orders'] ?? 0 }}</h2>
-          <small class="{{ ($adminExtras['pending_orders'] ?? 0) > 0 ? 'text-warning' : 'text-success' }}">
-            {{ ($adminExtras['pending_orders'] ?? 0) > 0 ? 'Action needed' : 'All clear' }}
-          </small>
+      {{-- Pending Orders --}}
+      <div class="col-lg-6 col-md-6">
+        <div class="card-glass hover-lift p-4 text-white d-flex flex-column justify-content-between" style="height: 160px; cursor: pointer;" onclick="location.href='{{ route('admin.orders') }}'">
+          <div>
+            <div class="d-flex justify-content-between">
+                <i class="bi bi-receipt fs-3 text-success opacity-75"></i>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 h-100 align-self-center">Orders</span>
+            </div>
+            <div class="opacity-75 small text-uppercase fw-bold mt-2">Pending Tasks</div>
+          </div>
+          <div>
+            <h2 class="fw-bold mb-0 text-white">{{ $adminExtras['pending_orders'] ?? 0 }}</h2>
+            <div class="small {{ ($adminExtras['pending_orders'] ?? 0) > 0 ? 'text-warning' : 'text-success' }} text-truncate">
+              <i class="bi bi-info-circle me-1"></i>{{ ($adminExtras['pending_orders'] ?? 0) > 0 ? 'Requires attention' : 'No items pending' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{-- Support Inbox --}}
+      <div class="col-lg-6 col-md-6">
+        <div class="card-glass hover-lift p-4 text-white d-flex flex-column justify-content-between" style="height: 160px; cursor: pointer;" onclick="location.href='{{ route('admin.messages.index') }}'">
+          <div>
+            <div class="d-flex justify-content-between">
+                <i class="bi bi-chat-left-text-fill fs-3 text-info opacity-75" style="color: #06b6d4 !important;"></i>
+                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 h-100 align-self-center" style="color: #06b6d4 !important;">Messages</span>
+            </div>
+            <div class="opacity-75 small text-uppercase fw-bold mt-2">User Inquiries</div>
+          </div>
+          <div>
+            <h2 class="fw-bold mb-0 text-white">{{ $adminExtras['pending_messages'] ?? 0 }}</h2>
+            <div class="small {{ ($adminExtras['pending_messages'] ?? 0) > 0 ? 'text-info' : 'text-white-50' }} text-truncate" style="{{ ($adminExtras['pending_messages'] ?? 0) > 0 ? 'color: #22d3ee !important;' : '' }}">
+              <i class="bi bi-envelope-open me-1"></i>{{ ($adminExtras['pending_messages'] ?? 0) > 0 ? 'New inbox items' : 'No new mail' }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -245,132 +229,88 @@
       $activePct  = $buyers > 0 ? round(($active30 / $buyers)*100) : 0;
     @endphp
 
-    <div class="card-glass p-4 mb-4 text-white">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0"><i class="bi bi-people me-2"></i>User Statistics</h4>
-        <span class="small text-white-50">Clear snapshot of your customers</span>
-      </div>
+    <div class="row g-4 mb-5">
+      {{-- User Statistics --}}
+      <div class="col-lg-6">
+        <div class="card-glass p-4 h-100 text-white d-flex flex-column" style="min-height: 520px;">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0 fw-bold"><i class="bi bi-pie-chart-fill me-2 text-info"></i>User Network</h4>
+            <span class="badge bg-info bg-opacity-20 text-white border border-info border-opacity-50 px-3 py-2 rounded-pill shadow-sm">Real-time Analytics</span>
+          </div>
 
-      <div class="row g-4 align-items-center">
-        {{-- Left: Rings --}}
-        <div class="col-lg-6">
-          <div class="d-flex flex-wrap gap-4">
-            {{-- Buyers share of all users --}}
-            <div class="text-center">
-              <div class="ring" style="--pct: {{ $buyersPct }}%;">
-                <div>
-                  <div class="val">{{ $buyersPct }}%</div>
-                  <div class="lbl">Buyers of Users</div>
-                </div>
-              </div>
-              <div class="mt-2 small text-white-50">{{ $buyers }} buyers / {{ $totalUsers }} users</div>
+          <div class="row align-items-center flex-grow-1 gy-4">
+            <div class="col-md-6 text-center">
+               <div style="height: 260px; position: relative;">
+                  <canvas id="userDistChart"></canvas>
+                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;">
+                    <div class="h3 fw-bold mb-0 text-white">{{ $stats['total_users'] ?? 0 }}</div>
+                    <div class="small text-white-50 text-uppercase" style="font-size: 0.6rem; letter-spacing: 1.5px;">Users</div>
+                  </div>
+               </div>
             </div>
-
-            {{-- Active last 30 days (optional) --}}
-            <div class="text-center">
-              <div class="ring" style="--pct: {{ $activePct }}%; background:
-                radial-gradient(closest-side, rgba(15,17,21,.92) 78%, transparent 79% 100%),
-                conic-gradient(#10b981 {{ $activePct }}%, rgba(255,255,255,.12) 0);">
-                <div>
-                  <div class="val">{{ $activePct }}%</div>
-                  <div class="lbl">Active (30d)</div>
-                </div>
-              </div>
-              <div class="mt-2 small text-white-50">{{ $active30 }} active / {{ $buyers }} buyers</div>
-            </div>
-
-            {{-- Admin+Seller mix --}}
-            <div class="text-center">
-              <div class="ring" style="--pct: {{ min(100, $adminsPct+$sellersPct) }}%; background:
-                radial-gradient(closest-side, rgba(15,17,21,.92) 78%, transparent 79% 100%),
-                conic-gradient(#f59e0b {{ min(100, $adminsPct+$sellersPct) }}%, rgba(255,255,255,.12) 0);">
-                <div>
-                  <div class="val">{{ min(100, $adminsPct+$sellersPct) }}%</div>
-                  <div class="lbl">Admin + Seller</div>
-                </div>
-              </div>
-              <div class="mt-2 small text-white-50">{{ $admins }} admins • {{ $sellers }} seller(s)</div>
+            <div class="col-md-6">
+               <div class="d-grid gap-3">
+                  <div class="p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10 d-flex align-items-center gap-3 hover-lift border-start border-4 border-info">
+                     <i class="bi bi-cart-fill fs-2 text-info"></i>
+                     <div class="flex-grow-1 overflow-hidden">
+                        <div class="text-white text-uppercase fw-bold tracking-widest mb-1" style="font-size: 0.8rem;">Active Buyers</div>
+                        <div class="display-6 fw-bold text-info lh-1 mb-0">{{ $userStats['buyers'] ?? 0 }}</div>
+                     </div>
+                  </div>
+               </div>
             </div>
           </div>
-        </div>
 
-        {{-- Right: seller-first numbers --}}
-        <div class="col-lg-6">
-          <div class="row g-3">
-            <div class="col-sm-6">
-              <div class="p-3 stat-pill">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="text-white-50">Total Buyers</span>
-                  <i class="bi bi-bag-check text-info"></i>
+          <div class="mt-4 row g-2">
+             <div class="col-4">
+                <div class="p-3 rounded-4 bg-danger bg-opacity-10 border border-danger border-opacity-25 text-center shadow-sm">
+                   <div class="text-danger-emphasis text-uppercase fw-bold mb-2" style="font-size: 0.6rem; letter-spacing: 0.5px;">Suspended</div>
+                   <div class="h4 mb-0 fw-bold text-white">{{ $stats['suspended_users'] ?? 0 }}</div>
                 </div>
-                <div class="h3 fw-bold mb-1">{{ $buyers }}</div>
-                <div class="progress" aria-label="Buyers share">
-                  <div class="progress-bar bg-info" style="width: {{ $buyersPct }}%"></div>
+             </div>
+             <div class="col-4">
+                <div class="p-3 rounded-4 bg-secondary bg-opacity-10 border border-secondary border-opacity-25 text-center shadow-sm">
+                   <div class="text-secondary-emphasis text-uppercase fw-bold mb-2" style="font-size: 0.6rem; letter-spacing: 0.5px;">Deleted</div>
+                   <div class="h4 mb-0 fw-bold text-white">{{ $stats['blocked_users'] ?? 0 }}</div>
                 </div>
-              </div>
-            </div>
+             </div>
+             <div class="col-4">
+                <div class="p-3 rounded-4 bg-success bg-opacity-10 border border-success border-opacity-25 text-center shadow-sm">
+                   <div class="text-success-emphasis text-uppercase fw-bold mb-2" style="font-size: 0.6rem; letter-spacing: 0.5px;">Active (30d)</div>
+                   <div class="h4 mb-0 fw-bold text-white">{{ $userStats['active_30d'] ?? 0 }}</div>
+                </div>
+             </div>
+          </div>
 
-            <div class="col-sm-6">
-              <div class="p-3 stat-pill">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="text-white-50">New Today</span>
-                  <i class="bi bi-plus-circle text-primary"></i>
-                </div>
-                <div class="h3 fw-bold mb-1">{{ $newToday }}</div>
-                <small class="text-white-50">New customers registered today</small>
-              </div>
-            </div>
-
-            <div class="col-sm-6">
-              <div class="p-3 stat-pill">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="text-white-50">Returning Buyers</span>
-                  <i class="bi bi-arrow-repeat text-success"></i>
-                </div>
-                <div class="h3 fw-bold mb-1">{{ $returning }}</div>
-                <small class="text-white-50">{{ $buyers>0 ? round(($returning/$buyers)*100) : 0 }}% of buyers</small>
-              </div>
-            </div>
-
-            <div class="col-sm-6">
-              <div class="p-3 stat-pill">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="text-white-50">Admins & Sellers</span>
-                  <i class="bi bi-person-gear text-warning"></i>
-                </div>
-                <div class="h3 fw-bold mb-1">{{ $admins }} • {{ $sellers }}</div>
-                <small class="text-white-50">Admins • Sellers</small>
-              </div>
-            </div>
+          <div class="mt-4 p-3 rounded-4 bg-info bg-opacity-5 border border-info border-opacity-10 text-center position-relative overflow-hidden">
+             <div class="small text-info text-uppercase tracking-widest fw-bold opacity-75">Aggregate Database Entries</div>
+             <div class="h3 fw-bold mb-0 text-white">{{ $stats['total_users'] ?? 0 }}</div>
           </div>
         </div>
-
-      </div> {{-- /row --}}
-    </div> {{-- /card-glass --}}
-    {{-- ===== End User Statistics ===== --}}
-
-    {{-- CONTROL CENTER (these can navigate) --}}
-    <div class="text-center mb-5">
-      <h2 class="section-title mb-4">Control Center</h2>
-      <div class="d-flex flex-wrap justify-content-center gap-3 gap-md-4">
-        <a href="{{ route('admin.users') }}" class="btn btn-cyan btn-3d text-white px-4 px-md-5 py-4 rounded-pill">
-          <i class="bi bi-people-fill fs-3"></i><br>Users List
-        </a>
-        <a href="{{ route('admin.products.list') }}" class="btn btn-indigo btn-3d text-white px-4 px-md-5 py-4 rounded-pill">
-          <i class="bi bi-grid-3x3-gap-fill fs-3"></i><br>Manage Products
-        </a>
-        <a href="{{ route('admin.revenue') }}" class="btn btn-warning btn-3d text-dark px-4 px-md-5 py-4 rounded-pill">
-          <i class="bi bi-cash-coin fs-3"></i><br>Revenue Details
-        </a>
-
-        <a href="{{ route('admin.discounts.global.edit') }}" class="btn btn-light btn-3d text-dark px-4 px-md-5 py-4 rounded-pill">
-          <i class="bi bi-tags fs-3"></i><br>Storewide Discount
-        </a>
       </div>
-      <div class="text-white-50 mt-3 small">
-        Tip: Per-product discount can be set in <em>Manage Products → Add/Edit</em>.
+
+      {{-- Revenue Analysis --}}
+      <div class="col-lg-6">
+        <div class="card-glass p-4 h-100 text-white d-flex flex-column" style="min-height: 500px;">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0 fw-bold"><i class="bi bi-graph-up me-2 text-warning"></i>Revenue History</h4>
+            <div class="d-flex gap-2">
+                <span class="badge bg-warning bg-opacity-20 text-white border border-warning border-opacity-50 px-3 py-2 rounded-pill shadow-sm">Store Performance</span>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">{{ $revenue['growth'] ?? '+0%' }} Growth</span>
+            </div>
+          </div>
+          <div class="flex-grow-1" style="min-height: 300px; position: relative;">
+            <canvas id="revenueChart"></canvas>
+          </div>
+          <div class="mt-4 p-4 rounded-4 bg-warning bg-opacity-10 border border-warning border-opacity-25 text-center shadow-lg position-relative overflow-hidden">
+             <div class="position-absolute opacity-10" style="bottom: -10px; right: 10px; font-size: 4rem;"><i class="bi bi-cash-coin"></i></div>
+             <div class="small text-warning text-uppercase tracking-widest fw-bold mb-2">Historical Gross Revenue</div>
+             <div class="display-5 fw-bold mb-0 text-white lh-1">₹{{ number_format($stats['total_revenue'] ?? 0) }}</div>
+          </div>
+        </div>
       </div>
     </div>
+
   </div>
   @endif
 
@@ -383,7 +323,7 @@
   <div class="text-center text-white-50 pb-4">
     <p class="mb-0 fs-6">
       <i class="bi bi-clock-history"></i>
-      Updated: {{ now()->format('d M Y • h:i A') }} • MyStore Admin v2.2
+      Updated: {{ now()->format('d M Y • h:i A') }} • MyStore Admin v2.3 (Latest)
     </p>
     @if(session('success')) <p class="text-success mt-2">{{ session('success') }}</p> @endif
     @if($errors->any()) <p class="text-warning mt-2">{{ $errors->first() }}</p> @endif
@@ -483,6 +423,98 @@
     }
   });
 })();
+
+// -- User Distribution Chart --
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('userDistChart');
+  if(!ctx) return;
+  
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Buyers', 'Sellers', 'Admins'],
+      datasets: [{
+        data: [
+          {{ $userStats['buyers'] ?? 0 }}, 
+          {{ $userStats['sellers'] ?? 0 }}, 
+          {{ $userStats['admins'] ?? 0 }}
+        ],
+        backgroundColor: ['#0ea5e9', '#6366f1', '#f59e0b'],
+        hoverBackgroundColor: ['#38bdf8', '#818cf8', '#fbbf24'],
+        borderWidth: 0,
+        weight: 1,
+        spacing: 5,
+        borderRadius: 10,
+        hoverOffset: 20
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '82%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          padding: 12,
+          displayColors: true,
+          cornerRadius: 8,
+          titleFont: { size: 14, weight: 'bold' },
+          bodyFont: { size: 13 }
+        }
+      }
+    }
+  });
+
+  // -- Revenue Chart --
+  const revCtx = document.getElementById('revenueChart');
+  if(revCtx) {
+    new Chart(revCtx, {
+      type: 'line',
+      data: {
+        labels: {!! json_encode(collect($monthlyRevenue)->pluck('month')) !!},
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: {!! json_encode(collect($monthlyRevenue)->pluck('revenue')) !!},
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245, 158, 11, 0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#1e293b',
+            titleColor: '#fff',
+            bodyColor: '#cbd5e1',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#cbd5e1' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#cbd5e1' }
+          }
+        }
+      }
+    });
+  }
+});
 </script>
 
 </body>

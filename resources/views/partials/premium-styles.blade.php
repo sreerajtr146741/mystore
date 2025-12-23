@@ -25,6 +25,9 @@
         
         --radius: 16px;
         --radius-sm: 8px;
+
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-bd: rgba(255, 255, 255, 0.15);
     }
 
     body {
@@ -62,7 +65,30 @@
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         backdrop-filter: blur(12px);
     }
+    .card-glass { 
+        background: var(--glass-bg); 
+        backdrop-filter: blur(16px); 
+        border: 1px solid var(--glass-bd); 
+        border-radius: 24px; 
+        transition: all 0.3s ease; 
+    }
+    .card-glass:hover { 
+        border-color: rgba(255, 255, 255, 0.25); 
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.1); 
+    }
+    .hover-lift:hover { transform: translateY(-6px); box-shadow: 0 20px 44px rgba(0,0,0,0.45) !important; }
+    
     .card-body { padding: 1.5rem; }
+    
+    /* MODALS - Fix for Dark Theme */
+    .modal-content.card-glass {
+        background: rgba(15, 23, 42, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-bd) !important;
+        color: #fff !important;
+    }
+    .modal-header, .modal-footer { border-color: rgba(255, 255, 255, 0.1) !important; }
+    .btn-close-white { filter: invert(1) grayscale(100%) brightness(200%); }
     
     /* TABLES */
     .table {

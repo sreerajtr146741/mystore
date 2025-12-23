@@ -130,7 +130,6 @@ class CheckoutController extends Controller
     public function process(Request $request)
     {
         try {
-
             $source = session()->has('checkout_items') ? 'checkout_items' : 'cart';
 
             $items = $this->currentItems();
@@ -138,9 +137,8 @@ class CheckoutController extends Controller
                 return redirect()->route('checkout')->with('error', 'Your cart is empty.');
             }
 
-            $buyer = session('checkout_address'); // Get from session instead of request validation here
+            $buyer = session('checkout_address');
             if (!$buyer) {
-                 // Fallback validation if session expired or direct hit
                  $buyer = $request->validate([
                     'full_name' => 'required|string|max:255',
                     'phone'     => 'required|string|max:30',
@@ -150,6 +148,28 @@ class CheckoutController extends Controller
             }
 
             $totals = $this->totals($items);
+            
+            // 1. Create Order in Database
+            $order = \App\Models\Order::create([
+                'user_id'          => auth()->id(), // Assumes auth is enforced by middleware
+                'total'            => $totals['total'],
+                'status'           => 'pending',
+                'payment_method'   => 'online', // or retrieve from request if dynamic
+                'payment_status'   => 'paid',   // Assumed paid if 'process' is reached after payment page
+                'shipping_address' => $buyer['address'],
+                'delivery_date'    => now()->addDays(7),
+            ]);
+
+            // 2. Create Order Items
+            foreach ($items as $item) {
+                \App\Models\OrderItem::create([
+                    'order_id'   => $order->id,
+                    'product_id' => $item['id'],
+                    'qty'        => $item['qty'], // IMPORTANT: use 'qty' column as fixed in API
+                    'price'      => $item['price']
+                ]);
+            }
+
             $subtotal = $totals['subtotal'];
             $shipping = $totals['shipping'];
             $platform_fee = $totals['platform_fee'];
@@ -161,7 +181,6 @@ class CheckoutController extends Controller
             $toName  = optional($user)->name  ?: $buyer['full_name'];
 
             $emailSent = false;
-
             try {
                 Mail::send(
                     'emails.order_receipt',
@@ -179,8 +198,11 @@ class CheckoutController extends Controller
                 if ($source === 'checkout_items') {
                     session()->forget('checkout_items');
                 } else {
-                    // USER REQUEST: Keep items in cart after payment
-                    // session()->forget('cart'); 
+                    // Remove purchased items from DB Cart
+                    if (auth()->check()) {
+                         \App\Models\Cart::where('user_id', auth()->id())->delete();
+                    }
+                   session()->forget('cart'); 
                 }
 
                 session()->forget(['discount_percent','discount_amount','coupon_code','free_shipping']);
@@ -192,7 +214,6 @@ class CheckoutController extends Controller
             return back()->withInput()->with('error', 'Could not send the receipt email. Please try again.');
 
         } catch (\Throwable $e) {
-
             Log::error('Checkout process error: '.$e->getMessage());
             return back()->with('error', 'Checkout failed: '.$e->getMessage());
         }

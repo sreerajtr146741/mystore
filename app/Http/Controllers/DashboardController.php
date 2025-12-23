@@ -91,6 +91,21 @@ class DashboardController extends Controller
             ];
         }
 
-        return view('admin.dashboard', compact('stats', 'recentOrders', 'topProducts', 'monthlyRevenue', 'alerts', 'userStats', 'revenue', 'adminExtras'));
+        // For Buyers/Sellers visiting the general /dashboard
+        // We use layouts.index which is a multi-role dashboard.
+        
+        $sellerStats = [];
+        $sellerProducts = [];
+        
+        if ($user && $user->isSeller()) {
+             $sellerProducts = Product::where('user_id', $user->id)->get();
+             $sellerStats = [
+                 'count'       => $sellerProducts->count(),
+                 'total_value' => $sellerProducts->sum('price'),
+                 'low_stock'   => $sellerProducts->where('stock', '<=', 5)->count(),
+             ];
+        }
+
+        return view('layouts.index', compact('stats', 'sellerStats', 'sellerProducts'));
     }
 }

@@ -9,12 +9,23 @@ use Illuminate\Http\Request;
 {
     public function store(Request $request) {
         $data = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'email' => 'required|email|max:255',
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
         ]);
+
+        if (!empty($data['name']) && empty($data['first_name'])) {
+            $parts = explode(' ', $data['name'], 2);
+            $data['first_name'] = $parts[0];
+            $data['last_name'] = $parts[1] ?? '';
+        }
+
+        if (empty($data['first_name'])) {
+             return back()->with('error', 'Name is required.');
+        }
 
         ContactMessage::create($data);
 
