@@ -43,7 +43,8 @@ class PaymentController extends Controller
                 'payment_method' => $request->payment_method,
                 'payment_details' => $request->payment_details,
                 'total' => $total,
-                'cart_items' => $cartItems->toArray()
+                'cart_items' => $cartItems->toArray(),
+                'is_buy_now' => false
             ]
         ]);
 
@@ -56,6 +57,60 @@ class PaymentController extends Controller
             'data' => [
                 'total' => $total,
                 'items_count' => $cartItems->count()
+            ]
+        ]);
+    }
+
+    /**
+     * Initiate Instant Checkout (Buy Now)
+     */
+    public function checkoutInstant(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+            'payment_method' => 'required|in:credit_card,debit_card,upi,cod',
+            'payment_details' => 'required|array',
+        ]);
+
+        $user = $request->user();
+        $product = \App\Models\Product::find($request->product_id);
+
+        if ($product->status !== 'active' || $product->stock < $request->quantity) {
+             return response()->json([
+                'success' => false,
+                'message' => 'Product not available or insufficient stock'
+            ], 400);
+        }
+
+        $total = $product->final_price * $request->quantity;
+        
+        // Mock a cart item structure
+        $item = [
+            'product_id' => $product->id,
+            'quantity' => $request->quantity,
+            'product' => $product->toArray()
+        ];
+
+        session([
+            'api_checkout_data' => [
+                'user_id' => $user->id,
+                'payment_method' => $request->payment_method,
+                'payment_details' => $request->payment_details,
+                'total' => $total,
+                'cart_items' => [$item],
+                'is_buy_now' => true
+            ]
+        ]);
+
+        OtpService::generateAndSend($user->email);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent to your email for payment verification',
+            'data' => [
+                'total' => $total,
+                'items_count' => 1
             ]
         ]);
     }
@@ -96,16 +151,21 @@ class PaymentController extends Controller
 
         // Create order items
         foreach ($checkoutData['cart_items'] as $item) {
+             // Handle both array/object access if derived from model or array
+             $price = isset($item['product']['final_price']) ? $item['product']['final_price'] : 0;
+             
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
-                'price' => $item['product']['final_price'],
+                'price' => $price,
             ]);
         }
 
-        // Clear cart
-        Cart::where('user_id', $user->id)->delete();
+        // Clear cart ONLY if not Buy Now
+        if (empty($checkoutData['is_buy_now'])) {
+            Cart::where('user_id', $user->id)->delete();
+        }
 
         // Clear session
         session()->forget('api_checkout_data');

@@ -42,19 +42,93 @@ class CheckoutController extends Controller
             return $item->product->final_price * $item->quantity;
         });
 
-        $discount = 0; // Calculate any applicable discounts
+        $subtotal = $cartItems->sum(function($item) {
+            return $item->product->final_price * $item->quantity;
+        });
+
+        // Calculate discounts (Coupon)
+        $discount = 0;
+        $couponCode = Cache::get("coupon_{$request->user()->id}");
+        $appliedCoupon = null;
+
+        if ($couponCode) {
+            $coupons = [
+                'SAVE10'   => ['type' => 'percent', 'value' => 10,  'min' => 0],
+                'FLAT150'  => ['type' => 'flat',    'value' => 150, 'min' => 500],
+                'FREESHIP' => ['type' => 'ship',    'value' => 59,  'min' => 299],
+            ];
+
+            if (isset($coupons[$couponCode])) {
+                $c = $coupons[$couponCode];
+                if ($subtotal >= $c['min']) {
+                     if ($c['type'] === 'percent') {
+                        $discount = $subtotal * ($c['value'] / 100);
+                     } elseif ($c['type'] === 'flat') {
+                        $discount = $c['value'];
+                     }
+                     // 'ship' type affects shipping cost, handled below if needed
+                     
+                     if ($discount > $subtotal) $discount = $subtotal;
+                     $appliedCoupon = $couponCode;
+                }
+            }
+        }
+
         $tax = $subtotal * 0; // Add tax if needed
-        $shipping = 0; // Calculate shipping if needed
-        $total = $subtotal - $discount + $tax + $shipping;
+        $shipping = ($subtotal > 0 && $subtotal < 300) ? 59.0 : 0.0;
+        
+        // Handle Free Shipping Coupon
+        if ($couponCode && isset($coupons[$couponCode]) && $coupons[$couponCode]['type'] === 'ship' && $subtotal >= $coupons[$couponCode]['min']) {
+            $shipping = 0;
+            $appliedCoupon = $couponCode;
+        }
+
+        $platformFee = ($subtotal > 0) ? 10.0 : 0.0;
+        $total = max(0, $subtotal - $discount + $tax + $shipping + $platformFee);
 
         return ApiResponse::success([
             'items' => $cartItems,
-            'subtotal' => $subtotal,
-            'discount' => $discount,
-            'tax' => $tax,
-            'shipping' => $shipping,
-            'total' => $total
+            'subtotal' => round($subtotal, 2),
+            'discount' => round($discount, 2),
+            'tax' => round($tax, 2),
+            'shipping' => round($shipping, 2),
+            'platform_fee' => round($platformFee, 2),
+            'total' => round($total, 2),
+            'coupon' => $appliedCoupon
         ]);
+    }
+
+    /**
+     * Apply Coupon
+     */
+    public function applyCoupon(Request $request)
+    {
+        $request->validate(['coupon_code' => 'required|string']);
+        $code = strtoupper(trim($request->coupon_code));
+        
+        $coupons = [
+            'SAVE10'   => ['type' => 'percent', 'value' => 10,  'min' => 0],
+            'FLAT150'  => ['type' => 'flat',    'value' => 150, 'min' => 500],
+            'FREESHIP' => ['type' => 'ship',    'value' => 59,  'min' => 299],
+        ];
+
+        if (!array_key_exists($code, $coupons)) {
+            return ApiResponse::error('Invalid coupon code', 400);
+        }
+
+        // Cache the coupon for the user (30 mins)
+        Cache::put("coupon_{$request->user()->id}", $code, now()->addMinutes(30));
+
+        return ApiResponse::success(['coupon' => $code], 'Coupon applied successfully');
+    }
+
+    /**
+     * Remove Coupon
+     */
+    public function removeCoupon(Request $request)
+    {
+        Cache::forget("coupon_{$request->user()->id}");
+        return ApiResponse::success(null, 'Coupon removed successfully');
     }
 
     /**

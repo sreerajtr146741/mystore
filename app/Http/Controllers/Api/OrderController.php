@@ -109,4 +109,26 @@ class OrderController extends Controller
             'Return request submitted successfully'
         );
     }
+
+    /**
+     * Download invoice
+     */
+    public function downloadInvoice(Request $request, $id)
+    {
+        $order = Order::where('user_id', $request->user()->id)
+            ->with(['user', 'items.product'])
+            ->find($id);
+
+        if (!$order) {
+            return ApiResponse::notFound('Order not found');
+        }
+
+        if ($order->status !== 'delivered') {
+            return ApiResponse::error('Invoice is available only after delivery', 400);
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.orders.invoice', compact('order'));
+        
+        return $pdf->download('invoice-INV-'.$order->id.'.pdf');
+    }
 }
