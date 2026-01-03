@@ -163,7 +163,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="tel" name="phone" class="form-control" id="fPhone" placeholder="10-digit mobile number" value="{{ $prefillPhone }}" required>
+                                    <input type="tel" name="phone" class="form-control" id="fPhone" placeholder="10-digit mobile number" value="{{ old('phone', $user->phoneno) }}" required>
                                     <label for="fPhone">10-digit mobile number</label>
                                 </div>
                             </div>

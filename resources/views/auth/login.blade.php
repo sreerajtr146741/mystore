@@ -42,21 +42,8 @@
         }
         .btn-grad:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(124,58,237,.35); filter: saturate(1.1); }
         .btn-grad:active { transform: translateY(0); }
-
-        .input-wrap { position: relative; }
-        .input-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity:.6; }
-        .input-wrap input { padding-left: 42px; }
-
-        /* FIXED: Eye icon size & position */
-        .password-eye {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.2rem;
-            cursor: pointer;
-            opacity: 0.6;
-        }
+        
+        /* Removed custom positioning rules in favor of Tailwind classes */
     </style>
 </head>
 <body class="relative flex items-center justify-center">
@@ -99,30 +86,41 @@
                     @csrf
 
                     <!-- Email -->
-                    <div class="input-wrap">
+                    <div class="relative">
                         <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 absolute left-3 top-[calc(50%+14px)] -translate-y-1/2 text-gray-500 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 13L2 6.76V18a2 2 0 002 2h16a2 2 0 002-2V6.76L12 13z"/>
                         </svg>
                         <input type="email" name="email" value="{{ old('email') }}" required
-                               class="field w-full px-4 py-3 border rounded-lg bg-white/70 focus:bg-white border-gray-300"
+                               class="field w-full px-4 py-3 border rounded-lg bg-white/70 focus:bg-white border-gray-300 pl-12" 
                                placeholder="you@example.com">
                     </div>
 
                     <!-- Password -->
-                    <div class="input-wrap">
+                    <div class="relative">
                         <label class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
 
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 absolute left-3 top-[calc(50%+14px)] -translate-y-1/2 text-gray-500 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M17 9V7a5 5 0 00-10 0v2H5v11h14V9h-2z"/>
                         </svg>
 
                         <input type="password" id="password" name="password" required
-                               class="field w-full px-4 py-3 border rounded-lg bg-white/70 focus:bg-white border-gray-300"
+                               class="field w-full px-4 py-3 border rounded-lg bg-white/70 focus:bg-white border-gray-300 pl-12 pr-12"
                                placeholder="••••••••">
 
                         <!-- Eye icon -->
-                        <span class="password-eye" onclick="togglePassword()">👁️</span>
+                        <div class="absolute right-3 top-[calc(50%+14px)] -translate-y-1/2 cursor-pointer text-gray-500 hover:text-indigo-600 z-10 flex items-center justify-center" onclick="togglePassword()">
+                            <!-- Eye Icon (Visible by default state of 'password' type is confusing, usually eye means 'show me') -->
+                            <!-- When type is password (dots), show Eye (Click to verify) -->
+                            <svg id="eye-show" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <!-- Eye Slash Icon (Hidden by default) -->
+                            <svg id="eye-hide" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                        </div>
                     </div>
 
                     <!-- Forgot Password -->
@@ -156,7 +154,18 @@
     <script>
         function togglePassword() {
             const pass = document.getElementById('password');
-            pass.type = pass.type === 'password' ? 'text' : 'password';
+            const showIcon = document.getElementById('eye-show');
+            const hideIcon = document.getElementById('eye-hide');
+            
+            if (pass.type === 'password') {
+                pass.type = 'text';
+                showIcon.classList.add('hidden');
+                hideIcon.classList.remove('hidden');
+            } else {
+                pass.type = 'password';
+                showIcon.classList.remove('hidden');
+                hideIcon.classList.add('hidden');
+            }
         }
     </script>
 

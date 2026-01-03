@@ -157,7 +157,7 @@
                     <h6 class="fw-bold">{{ auth()->user()->name }}</h6>
                     <p class="mb-0 text-muted small">{{ $order->shipping_address }}</p>
                     <hr>
-                    <div class="small text-muted">Phone: {{ auth()->user()->phone ?? 'N/A' }}</div>
+                    <div class="small text-muted">Phone: {{ auth()->user()->phoneno ?? 'N/A' }}</div>
                 </div>
             </div>
         </div>

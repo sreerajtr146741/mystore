@@ -57,6 +57,11 @@ class User extends Authenticatable
         return (string)($this->role ?? '') === 'buyer';
     }
 
+    public function isSeller(): bool
+    {
+        return (string)($this->role ?? '') === 'seller';
+    }
+
     // === RELATIONSHIPS ===
     public function products()
     {
@@ -82,7 +87,8 @@ class User extends Authenticatable
             return asset('storage/' . $this->profile_photo);
         }
 
-        // Using firstname for the avatar since 'name' was removed
-        return 'https://ui-avatars.com/api/?background=6d28d9&color=fff&name=' . urlencode($this->firstname);
+        // Fallback: firstname -> name -> email -> 'User'
+        $name = $this->firstname ?: ($this->name ?: $this->email);
+        return 'https://ui-avatars.com/api/?background=6d28d9&color=fff&name=' . urlencode($name ?? 'User');
     }
 }

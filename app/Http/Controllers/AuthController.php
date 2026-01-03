@@ -62,10 +62,10 @@ class AuthController extends Controller
         ]);
 
         $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name'  => $request->last_name,
+            'firstname' => $request->first_name,
+            'lastname'  => $request->last_name,
             'email'      => $request->email,
-            'phone'      => $request->phone,
+            'phoneno'    => $request->phone,
             'address'    => null, // Set to null as it's no longer in form
             'password'   => bcrypt($request->password),
             'role'       => 'buyer', // Default to buyer
@@ -227,23 +227,19 @@ class AuthController extends Controller
         try {
             $user = $request->user();
             $data = $request->validate([
-                'name'          => 'required|string|max:255',
+                'firstname'     => 'required|string|max:255',
+                'lastname'      => 'required|string|max:255',
                 'email'         => 'required|email|unique:users,email,' . $user->id,
-                'phone'         => 'nullable|digits:10',
+                'phoneno'       => 'nullable|digits:10',
                 'address'       => 'nullable|string|max:500',
                 'profile_photo' => 'nullable|image|max:2048',
             ], [
-                'phone.digits' => 'Phone number must be exactly 10 digits.',
+                'phoneno.digits' => 'Phone number must be exactly 10 digits.',
             ]);
 
-            // Sync first_name and last_name from name
-            $parts = explode(' ', $data['name'], 2);
-            $data['first_name'] = $parts[0];
-            $data['first_name'] = $parts[0];
-            $data['last_name'] = !empty($parts[1]) ? $parts[1] : ''; // Fallback to empty string, but if DB requires checks...
-            // Actually, if DB is strict, empty string might be fine. But let's be safer?
-            // If the user name is just "Admin", name=Admin, last_name=""
-            // If the user originally had first="Admin" last="User", and changes name to "Admin", last becomes "".
+            // Optional: Sync 'name' column if it exists in DB but not fillable (won't work with update())
+            // Or just rely on firstname/lastname.
+            // Let's just rely on the fillable attributes being updated.
 
 
             if ($request->hasFile('profile_photo')) {
