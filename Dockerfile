@@ -61,14 +61,46 @@ set -e\n\
 \n\
 echo "=== Starting Laravel Application ==="\n\
 \n\
-# Check if .env exists, if not create from example\n\
+# Create .env file if it does not exist\n\
 if [ ! -f .env ]; then\n\
-    echo "Creating .env file from environment variables..."\n\
-    touch .env\n\
+    echo "Creating .env file..."\n\
+    cat > .env << EOF\n\
+APP_NAME="${APP_NAME:-Laravel}"\n\
+APP_ENV="${APP_ENV:-production}"\n\
+APP_KEY=\n\
+APP_DEBUG="${APP_DEBUG:-false}"\n\
+APP_URL="${APP_URL:-http://localhost}"\n\
+\n\
+LOG_CHANNEL=stack\n\
+LOG_LEVEL=debug\n\
+\n\
+DB_CONNECTION="${DB_CONNECTION:-mysql}"\n\
+DB_HOST="${DB_HOST:-127.00.1}"\n\
+DB_PORT="${DB_PORT:-3306}"\n\
+DB_DATABASE="${DB_DATABASE:-laravel}"\n\
+DB_USERNAME="${DB_USERNAME:-root}"\n\
+DB_PASSWORD="${DB_PASSWORD:-}"\n\
+\n\
+BROADCAST_DRIVER=log\n\
+CACHE_DRIVER=file\n\
+FILESYSTEM_DISK=local\n\
+QUEUE_CONNECTION=sync\n\
+SESSION_DRIVER=file\n\
+SESSION_LIFETIME=120\n\
+\n\
+MAIL_MAILER="${MAIL_MAILER:-smtp}"\n\
+MAIL_HOST="${MAIL_HOST:-smtp.gmail.com}"\n\
+MAIL_PORT="${MAIL_PORT:-587}"\n\
+MAIL_USERNAME="${MAIL_USERNAME:-}"\n\
+MAIL_PASSWORD="${MAIL_PASSWORD:-}"\n\
+MAIL_ENCRYPTION="${MAIL_ENCRYPTION:-tls}"\n\
+MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-hello@example.com}"\n\
+MAIL_FROM_NAME="${MAIL_FROM_NAME:-Laravel}"\n\
+EOF\n\
 fi\n\
 \n\
-# Generate APP_KEY if not set\n\
-if [ -z "$APP_KEY" ]; then\n\
+# Generate APP_KEY if not set in .env\n\
+if ! grep -q "APP_KEY=base64:" .env; then\n\
     echo "Generating APP_KEY..."\n\
     php artisan key:generate --force\n\
 fi\n\
