@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -74,11 +74,11 @@ APP_URL="${APP_URL:-http://localhost}"\n\
 LOG_CHANNEL=stack\n\
 LOG_LEVEL=debug\n\
 \n\
-DB_CONNECTION="${DB_CONNECTION:-mysql}"\n\
-DB_HOST="${DB_HOST:-127.00.1}"\n\
-DB_PORT="${DB_PORT:-3306}"\n\
+DB_CONNECTION="${DB_CONNECTION:-pgsql}"\n\
+DB_HOST="${DB_HOST:-127.0.0.1}"\n\
+DB_PORT="${DB_PORT:-5432}"\n\
 DB_DATABASE="${DB_DATABASE:-laravel}"\n\
-DB_USERNAME="${DB_USERNAME:-root}"\n\
+DB_USERNAME="${DB_USERNAME:-postgres}"\n\
 DB_PASSWORD="${DB_PASSWORD:-}"\n\
 \n\
 BROADCAST_DRIVER=log\n\
