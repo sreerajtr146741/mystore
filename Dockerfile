@@ -52,3 +52,6 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # Start Apache in foreground
 CMD ["apache2-foreground"]
+
+
+RUN php artisan migrate --force
