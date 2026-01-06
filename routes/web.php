@@ -22,7 +22,7 @@ use App\Http\Controllers\MailTestController;
 | ROOT → Always show products first (even for guests)
 |--------------------------------------------------------------------------
 */
-Route::get('/', [ProductController::class, 'index'])->name('products.index');
+Route::get('/', [ProductController::class, 'index'])->name('home');
 
 /*
 |--------------------------------------------------------------------------
@@ -194,3 +194,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 });
 //test mail
 Route::get('/test-mail', [MailTestController::class, 'send']);
+
