@@ -1,10 +1,8 @@
 services:
   - type: web
     name: mystore
-    env: php
+    env: docker
     plan: free
-    buildCommand: sh render-build.sh
-    startCommand: heroku-php-nginx public/
     envVars:
       - key: APP_NAME
         value: MyStore
@@ -28,3 +26,20 @@ services:
         sync: false
       - key: DB_PASSWORD
         sync: false
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: MyStore
+
