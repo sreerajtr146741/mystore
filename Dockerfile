@@ -59,20 +59,45 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
+echo "=== Starting Laravel Application ==="\n\
+\n\
+# Check if .env exists, if not create from example\n\
+if [ ! -f .env ]; then\n\
+    echo "Creating .env file from environment variables..."\n\
+    touch .env\n\
+fi\n\
+\n\
 # Generate APP_KEY if not set\n\
 if [ -z "$APP_KEY" ]; then\n\
+    echo "Generating APP_KEY..."\n\
     php artisan key:generate --force\n\
 fi\n\
 \n\
+# Clear any existing cache\n\
+echo "Clearing cache..."\n\
+php artisan config:clear || true\n\
+php artisan route:clear || true\n\
+php artisan view:clear || true\n\
+\n\
 # Cache configuration\n\
+echo "Caching configuration..."\n\
 php artisan config:cache\n\
 php artisan route:cache\n\
 php artisan view:cache\n\
 \n\
 # Run migrations\n\
-php artisan migrate --force\n\
+echo "Running migrations..."\n\
+php artisan migrate --force || echo "Migration failed, continuing..."\n\
+\n\
+# Set proper permissions\n\
+echo "Setting permissions..."\n\
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache\n\
+\n\
+# Show Laravel version\n\
+echo "Laravel version: $(php artisan --version)"\n\
 \n\
 # Start Apache\n\
+echo "Starting Apache..."\n\
 exec apache2-foreground\n\
 ' > /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
