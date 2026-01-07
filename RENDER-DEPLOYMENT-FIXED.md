@@ -36,24 +36,24 @@
 
 ## Next Steps
 
-### To Populate Products on Render:
+### ✅ Automatic Database Seeding (Free Tier Compatible)
 
-You need to run the seeder on Render. You can do this in two ways:
+The Docker entrypoint has been updated to **automatically seed the database** on deployment! 
 
-#### Option 1: Via Render Shell (Recommended)
-1. Go to your Render dashboard
-2. Click on your service "buyorix-backend"
-3. Go to the "Shell" tab
-4. Run: `php artisan db:seed --class=ProductSeeder`
+**How it works:**
+- On each deployment, the script checks if the products table is empty
+- If empty, it automatically runs `ProductSeeder` to populate sample products
+- If products already exist, it skips seeding to avoid duplicates
+- This happens automatically - no shell access needed!
 
-#### Option 2: Add to Docker Entrypoint (Automatic)
-Add this line to your `Dockerfile` entrypoint script before "Starting Apache":
-```bash
-echo "Seeding database..."
-php artisan db:seed --force || echo "Seeding failed or already seeded"
-```
+**What to expect on next deployment:**
+1. Render will rebuild the Docker image
+2. Migrations will run
+3. Database will be checked for products
+4. If empty, 10 sample products will be automatically added
+5. Your homepage will show products instead of "Sorry, no results found!"
 
-### To Add Product Images:
+### Manual Seeding (Optional - For Local Testing)
 
 The seeder creates products without images. To add images:
 1. Upload product images to `public/images/products/` directory
