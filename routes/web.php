@@ -195,3 +195,30 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 //test mail
 Route::get('/test-mail', [MailTestController::class, 'send']);
 
+// Health Check Route for Deployment Debugging
+Route::get('/health-check', function () {
+    try {
+        $dbName = \Illuminate\Support\Facades\DB::connection()->getName();
+        $productCount = \App\Models\Product::count();
+        $config = config('database.connections.'.$dbName);
+        
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Backend is running',
+            'database' => [
+                'connection' => $dbName,
+                'host' => $config['host'] ?? 'unknown',
+                'port' => $config['port'] ?? 'unknown',
+                'database' => $config['database'] ?? 'unknown',
+            ],
+            'products_count' => $productCount,
+            'server_time' => now()->toDateTimeString(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Database connection failed: ' . $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+});

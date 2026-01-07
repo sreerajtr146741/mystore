@@ -36,7 +36,7 @@ class ProductSeeder extends Seeder
             'Headphones' => Category::firstOrCreate(['name' => 'Headphones']),
         ];
 
-        // Sample products
+        // Sample products with Placeholder Images
         $products = [
             [
                 'name' => 'iPhone 15 Pro',
@@ -45,6 +45,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Mobile Phones',
                 'stock' => 50,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/1a1a1a/gold?text=iPhone+15+Pro',
             ],
             [
                 'name' => 'Samsung Galaxy S24 Ultra',
@@ -53,6 +54,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Mobile Phones',
                 'stock' => 45,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/222222/FFF?text=Galaxy+S24+Ultra',
             ],
             [
                 'name' => 'MacBook Pro 16"',
@@ -61,6 +63,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Laptops',
                 'stock' => 30,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/c7c7c7/000?text=MacBook+Pro+16',
             ],
             [
                 'name' => 'Dell XPS 15',
@@ -69,6 +72,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Laptops',
                 'stock' => 25,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/333/FFF?text=Dell+XPS+15',
             ],
             [
                 'name' => 'iPad Pro 12.9"',
@@ -77,6 +81,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Tablets',
                 'stock' => 40,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/DDD/000?text=iPad+Pro',
             ],
             [
                 'name' => 'Samsung Galaxy Tab S9',
@@ -85,6 +90,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Tablets',
                 'stock' => 35,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/111/FFF?text=Galaxy+Tab+S9',
             ],
             [
                 'name' => 'Apple Watch Series 9',
@@ -93,6 +99,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Smart Watches',
                 'stock' => 60,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/red/white?text=Apple+Watch+S9',
             ],
             [
                 'name' => 'Samsung Galaxy Watch 6',
@@ -101,6 +108,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Smart Watches',
                 'stock' => 55,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/333/white?text=Galaxy+Watch+6',
             ],
             [
                 'name' => 'Sony WH-1000XM5',
@@ -109,6 +117,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Headphones',
                 'stock' => 70,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/000/FFF?text=Sony+XM5',
             ],
             [
                 'name' => 'AirPods Pro (2nd Gen)',
@@ -117,6 +126,7 @@ class ProductSeeder extends Seeder
                 'category' => 'Headphones',
                 'stock' => 100,
                 'is_active' => true,
+                'image' => 'https://placehold.co/600x400/FFF/000?text=AirPods+Pro',
             ],
         ];
 
@@ -134,7 +144,7 @@ class ProductSeeder extends Seeder
                 'price' => $productData['price'],
                 'stock' => $productData['stock'],
                 'is_active' => $productData['is_active'],
-                'image' => null, // You can add default images later
+                'image' => $productData['image'], // Added image
             ]);
         }
 
