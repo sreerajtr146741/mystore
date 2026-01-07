@@ -57,39 +57,45 @@ class AuthController extends Controller
     -------------------------- */
     public function register(Request $request)
     {
-        $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name'  => 'required|string|max:255',
-            'email'      => 'required|email|unique:users,email',
-            'phone'      => 'required|digits:10',
-            // 'address' => 'required', // Removed
-            'password'   => 'required|confirmed|min:6',
-            // 'role'       => 'required|in:buyer,seller',
-            'name'       => trim($request->first_name . ' ' . $request->last_name),
-        ], [
-            'phone.digits' => 'Phone number must be exactly 10 digits.',
-        ]);
+        try {
+            $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name'  => 'required|string|max:255',
+                'email'      => 'required|email|unique:users,email',
+                'phone'      => 'required|digits:10',
+                // 'address' => 'required', // Removed
+                'password'   => 'required|confirmed|min:6',
+                // 'role'       => 'required|in:buyer,seller',
+                'name'       => trim($request->first_name . ' ' . $request->last_name),
+            ], [
+                'phone.digits' => 'Phone number must be exactly 10 digits.',
+            ]);
 
-        $user = User::create([
-            'firstname' => $request->first_name,
-            'lastname'  => $request->last_name,
-            'email'      => $request->email,
-            'phoneno'    => $request->phone,
-            'address'    => null, // Set to null as it's no longer in form
-            'password'   => bcrypt($request->password),
-            'role'       => 'buyer', // Default to buyer
-            'name'       => trim($request->first_name . ' ' . $request->last_name),
-        ]);
+            $user = User::create([
+                'firstname' => $request->first_name,
+                'lastname'  => $request->last_name,
+                'email'      => $request->email,
+                'phoneno'    => $request->phone,
+                'address'    => null, // Set to null as it's no longer in form
+                'password'   => bcrypt($request->password),
+                'role'       => 'buyer', // Default to buyer
+                'name'       => trim($request->first_name . ' ' . $request->last_name),
+            ]);
 
-        // Generate & Send OTP
-        OtpService::generateAndSend($user->email, 'registration', ['role' => $user->role]);
+            // Generate & Send OTP
+            OtpService::generateAndSend($user->email, 'registration', ['role' => $user->role]);
 
-        // Store user temporarily in session
-        session(['pending_registration_user_id' => $user->id]);
+            // Store user temporarily in session
+            session(['pending_registration_user_id' => $user->id]);
 
-        // Go to OTP page (NOT login page)
-        return redirect()->route('verify.register.otp')
-                         ->with('info', 'We sent a 6-digit OTP to your email');
+            // Go to OTP page (NOT login page)
+            return redirect()->route('verify.register.otp')
+                             ->with('info', 'We sent a 6-digit OTP to your email');
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Registration Error: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Registration failed: ' . $e->getMessage());
+        }
     }
 
     /* -------------------------

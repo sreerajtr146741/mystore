@@ -19,6 +19,7 @@ class User extends Authenticatable
     protected $fillable = [
         'firstname',
         'lastname',
+        'name', // Added name
         'email',
         'phoneno', // Changed from 'phone' to 'phoneno' to match your JSON
         'address', // Added back for profile updates
