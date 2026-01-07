@@ -14,7 +14,8 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::where('status', 'active');
+        // Use the model scope to handle active check correctly (uses is_active)
+        $query = Product::active();
 
         // Search
         if ($request->filled('search')) {
@@ -69,7 +70,8 @@ class ProductController extends Controller
             return ApiResponse::notFound('Product not found');
         }
 
-        if ($product->status !== 'active') {
+        // Check is_active logic properly
+        if (!$product->is_active) {
             return ApiResponse::notFound('Product not available');
         }
 
