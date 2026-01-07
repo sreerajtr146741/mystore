@@ -113,9 +113,9 @@ APP_URL=https://buyorix-backend.onrender.com
 APP_KEY=base64:... (auto-generated)
 
 # Database
-DB_CONNECTION=mysql
-DB_HOST=your-db-host
-DB_PORT=3306
+DB_CONNECTION=pgsql
+DB_HOST=your-db-host (e.g., dpg-...)
+DB_PORT=5432
 DB_DATABASE=your-db-name
 DB_USERNAME=your-db-user
 DB_PASSWORD=your-db-password
