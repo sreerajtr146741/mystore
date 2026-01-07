@@ -92,9 +92,15 @@ Route::middleware('guest')->group(function () {
 
 // OTP Verification (common for login & register)
 // routes/web.php
-Route::get('/verify-otp/register', function () {
-    $userId = session('pending_registration_user_id');
-    $email = $userId ? \App\Models\User::find($userId)?->email : null;
+Route::get('/verify-otp/register', function (\Illuminate\Http\Request $request) {
+    // Prioritize query param (stateless), then session (stateful fallback)
+    $email = $request->query('email');
+    
+    if (!$email) {
+        $userId = session('pending_registration_user_id');
+        $email = $userId ? \App\Models\User::find($userId)?->email : null;
+    }
+    
     return view('auth.verify-register-otp', ['email' => $email]);
 })->name('verify.register.otp');
 

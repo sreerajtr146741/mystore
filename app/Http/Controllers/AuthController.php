@@ -89,7 +89,7 @@ class AuthController extends Controller
             session(['pending_registration_user_id' => $user->id]);
 
             // Go to OTP page (NOT login page)
-            return redirect()->route('verify.register.otp')
+            return redirect()->route('verify.register.otp', ['email' => $user->email])
                              ->with('info', 'We sent a 6-digit OTP to your email');
 
         } catch (\Exception $e) {
@@ -177,11 +177,13 @@ class AuthController extends Controller
             return $this->redirectBasedOnRole($user);
         }
 
-        // Login flow
-        if (session('pending_login_email')) {
-            $user = User::where('email', $request->email)->first();
+        // Login flow (Robust: Works even if session 'pending_login_email' is lost)
+        // Since we already verified OTP matches $request->email, we can trust the email.
+        $user = User::where('email', $request->email)->first();
+        
+        if ($user) {
             Auth::login($user);
-            session()->forget('pending_login_email');
+            session()->forget(['pending_login_email', 'pending_user_id']); 
             
             $request->session()->regenerate();
             
@@ -276,19 +278,23 @@ class AuthController extends Controller
     public function verifyRegisterOtp(Request $request)
     {
         $request->validate([
-            'otp' => 'required|digits:6'
+            'otp' => 'required|digits:6',
+            'email' => 'required|email'
         ]);
     
-        $userId = session('pending_registration_user_id');
+        // Try session first, then email fallback
+        $user = null;
+        if (session('pending_registration_user_id')) {
+            $user = User::find(session('pending_registration_user_id'));
+        } elseif ($request->email) {
+            $user = User::where('email', $request->email)->first();
+        }
     
-        if (!$userId) {
+        if (!$user) {
             return redirect()->route('register')->with('error', 'Session expired. Please register again.');
         }
     
-        $user = User::find($userId);
-    
         if (OtpService::verify($user->email, $request->otp)) {
-            // OTP correct → log the user in automatically
             // OTP correct → log the user in automatically
             Auth::login($user);
             session()->forget('pending_registration_user_id');

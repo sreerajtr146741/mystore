@@ -16,6 +16,7 @@
 
         <form action="{{ route('verify.register.otp.post') }}" method="POST" class="space-y-6">
             @csrf
+            <input type="hidden" name="email" value="{{ $email }}">
             <input type="text" name="otp" maxlength="6" required autofocus
                    class="w-full text-center text-3xl font-bold tracking-wider border-2 border-indigo-300 rounded-2xl py-6 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
                    placeholder="000000" pattern="\d{6}" inputmode="numeric">
