@@ -139,6 +139,7 @@ class ProductSeeder extends Seeder
             Product::create([
                 'user_id' => $admin->id,
                 'category_id' => $category->id,
+                'category' => $categoryName, // Fix: Populate required string column
                 'name' => $productData['name'],
                 'description' => $productData['description'],
                 'price' => $productData['price'],
