@@ -222,3 +222,26 @@ Route::get('/health-check', function () {
         ], 500);
     }
 });
+
+// Temporary Fix Route for Admin Access (Run once then remove)
+Route::get('/fix-admin-access', function () {
+    $user = \App\Models\User::where('email', 'admin@store.com')->first();
+    if ($user) {
+        // Update password to 'admin123' (User model cast 'hashed' will handle hashing)
+        $user->update(['password' => 'admin123']);
+        return "Admin user found. Password reset to 'admin123'. Please login now (Username: admin@store.com)";
+    } else {
+        // Create if missing (simplified)
+        \App\Models\User::create([
+             'name' => 'Administrator',
+             'firstname' => 'Admin',
+             'lastname' => 'User',
+             'email' => 'admin@store.com',
+             'password' => 'admin123',
+             'role' => 'admin',
+             'phoneno' => '0000000000',
+             'address' => 'Store HQ',
+        ]);
+        return "Admin user was missing. Created with password 'admin123'.";
+    }
+});

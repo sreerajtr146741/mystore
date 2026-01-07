@@ -77,7 +77,7 @@ class AuthController extends Controller
                 'email'      => $request->email,
                 'phoneno'    => $request->phone,
                 'address'    => null, // Set to null as it's no longer in form
-                'password'   => bcrypt($request->password),
+                'password'   => $request->password,
                 'role'       => 'buyer', // Default to buyer
                 'name'       => trim($request->first_name . ' ' . $request->last_name),
             ]);

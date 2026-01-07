@@ -20,7 +20,7 @@ class ProductSeeder extends Seeder
                 'firstname' => 'Admin',
                 'lastname' => 'User',
                 'email' => 'admin@store.com',
-                'password' => bcrypt('admin123'),
+                'password' => 'admin123',
                 'role' => 'admin',
                 'phoneno' => '0000000000',
                 'address' => 'Store HQ',
