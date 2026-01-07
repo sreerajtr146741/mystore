@@ -124,6 +124,16 @@ php artisan view:cache\n\
 echo "Running migrations..."\n\
 php artisan migrate --force || echo "Migration failed, continuing..."\n\
 \n\
+# Seed database with sample products (only if products table is empty)\n\
+echo "Checking if database needs seeding..."\n\
+PRODUCT_COUNT=$(php artisan tinker --execute="echo \\App\\Models\\Product::count();" 2>/dev/null || echo "0")\n\
+if [ "$PRODUCT_COUNT" = "0" ]; then\n\
+    echo "Seeding database with sample products..."\n\
+    php artisan db:seed --class=ProductSeeder --force || echo "Seeding failed, continuing..."\n\
+else\n\
+    echo "Database already has $PRODUCT_COUNT products, skipping seeding."\n\
+fi\n\
+\n\
 # Set proper permissions\n\
 echo "Setting permissions..."\n\
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache\n\
