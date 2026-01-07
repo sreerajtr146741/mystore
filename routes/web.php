@@ -40,7 +40,7 @@ Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'
 | CART (guest can view, but add/buy/checkout requires login + OTP)
 |--------------------------------------------------------------------------
 */
-Route::get('/cart', fn () => view('cart.index'))->name('cart.index');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 
 // Add to cart → force login if not authenticated
 Route::post('/cart/add/{product}', [ProductController::class, 'addToCart'])->name('cart.add');
@@ -124,11 +124,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/profile/edit', fn () => view('profile.edit'))->name('profile.edit');
+    Route::get('/profile/edit', [AuthController::class, 'editProfile'])->name('profile.edit');
     Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('profile.update');
 
     // Special Admin Login from Profile Dropdown (admin@store.com / admin123)
-    Route::get('/admin-login', fn() => view('auth.admin-login'))->name('admin.login.form');
+    Route::get('/admin-login', [AdminController::class, 'showAdminLoginForm'])->name('admin.login.form');
     Route::post('/admin-login', [AdminController::class, 'adminLogin'])->name('admin.login.submit');
 
     // My Orders (User)

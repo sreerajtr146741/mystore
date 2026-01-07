@@ -43,6 +43,15 @@ class AuthController extends Controller
         }
     }
 
+    public function editProfile()
+    {
+        try {
+            return view('profile.edit');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to load profile edit page: '.$e->getMessage());
+        }
+    }
+
     /* -------------------------
         HANDLE REGISTRATION (with OTP)
     -------------------------- */

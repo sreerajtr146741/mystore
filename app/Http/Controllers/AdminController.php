@@ -10,6 +10,10 @@ class AdminController extends Controller {
         $this->middleware('auth');
     }
 
+    public function showAdminLoginForm() {
+        return view('auth.admin-login');
+    }
+
     public function adminLogin(Request $request) {
         $request->validate(['email' => 'required', 'password' => 'required']);
 
