@@ -1,8 +1,7 @@
 # ---------------------------------------------------
-# PHP + Nginx + Composer Dockerfile for Laravel 10/11
+# PHP 8.3 + Nginx + Composer + PostgreSQL for Laravel
 # ---------------------------------------------------
 
-# PHP 8.3 FPM
 FROM php:8.3-fpm
 
 # Install system dependencies
@@ -13,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpq-dev \
+    pkg-config \
     libonig-dev \
     && docker-php-ext-install pdo pdo_pgsql mbstring bcmath
 
@@ -23,20 +23,20 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 # Set working directory
 WORKDIR /var/www
 
-# Copy Laravel project files
+# Copy application files
 COPY . .
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Copy Nginx configuration
+# Copy Nginx config
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 
-# Laravel storage permissions
+# Set permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Expose port
+# Expose port 80
 EXPOSE 80
 
-# Start Nginx + PHP-FPM
+# Start Nginx and PHP-FPM
 CMD service nginx start && php-fpm
