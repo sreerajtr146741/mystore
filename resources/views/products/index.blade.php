@@ -139,7 +139,7 @@
                     {{-- Static Slide 1: Home Banner --}}
                     <div class="carousel-item active">
                         <div class="banner-container">
-                            <img src="{{ asset('images/banners/home-banner.png') }}" class="d-block standard-banner" alt="Super Sale">
+                            <img src="https://placehold.co/1200x250/6d28d9/ffffff?text=Super+Sale+Starts+Now" class="d-block standard-banner" alt="Super Sale">
                         </div>
                     </div>
 
