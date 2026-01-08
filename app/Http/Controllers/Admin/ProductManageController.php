@@ -107,7 +107,7 @@ class ProductManageController extends Controller
                         'name' => $p->name,
                         'banners' => $p->banners->map(fn($b) => [
                             'id' => $b->id,
-                            'url' => Storage::url($b->image),
+                            'url' => filter_var($b->image, FILTER_VALIDATE_URL) ? $b->image : Storage::url($b->image),
                             'start' => $b->start_at ? $b->start_at->format('Y-m-d') : null,
                             'end' => $b->end_at ? $b->end_at->format('Y-m-d') : null,
                         ])

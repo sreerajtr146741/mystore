@@ -98,7 +98,7 @@ class ProductController extends Controller
 
                         if ($isActive) {
                             $carouselSlides->push([
-                                'image' => \Storage::url($b->image),
+                                'image' => filter_var($b->image, FILTER_VALIDATE_URL) ? $b->image : \Storage::url($b->image),
                                 'link'  => route('products.show', $p->id),
                                 'title' => $p->name,
                                 'desc'  => 'New Arrival',
