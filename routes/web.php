@@ -251,3 +251,11 @@ Route::get('/fix-admin-access', function () {
         return "Admin user was missing. Created with password 'admin123'.";
     }
 });
+Route::get('/fix-storage', function () {
+    try {
+        Artisan::call('storage:link');
+        return 'Storage link created successfully. <a href="/">Go Home</a>';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
