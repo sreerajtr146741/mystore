@@ -85,6 +85,9 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     
+    // Current User (Standard Laravel Endpoint)
+    Route::get('/user', [AuthController::class, 'profile']);
+
     // User Profile
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::match(['put', 'post'], '/profile', [AuthController::class, 'updateProfile']); // Allow POST too
@@ -115,7 +118,7 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum', 'admin.api'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'is_admin'])->prefix('admin')->group(function () {
     
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
@@ -139,3 +142,6 @@ Route::middleware(['auth:sanctum', 'admin.api'])->prefix('admin')->group(functio
     Route::get('/orders/{id}', [OrderManagementController::class, 'show']);
     Route::patch('/orders/{id}/status', [OrderManagementController::class, 'updateStatus']);
 });
+
+// Alias: /api/users -> Admin User List (Protected)
+Route::middleware(['auth:sanctum', 'is_admin'])->get('/users', [UserManagementController::class, 'index']);
