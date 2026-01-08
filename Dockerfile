@@ -20,8 +20,10 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
-# Remove default nginx page
-RUN rm -rf /usr/share/nginx/html/*
+# Remove default nginx page and configs
+RUN rm -rf /usr/share/nginx/html/* \
+    && rm -rf /etc/nginx/sites-enabled/* \
+    && rm -rf /etc/nginx/sites-available/*
 
 # Copy nginx config
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
