@@ -1,6 +1,6 @@
 FROM php:8.2-fpm
 
-# Install Nginx and required system libraries
+# Install Nginx + system dependencies
 RUN apt-get update && apt-get install -y \
     nginx \
     libpq-dev \
@@ -8,9 +8,10 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libzip-dev \
     unzip \
-    zip
+    zip \
+    supervisor
 
-# Install PHP extensions
+# Install PDO extensions
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
 # Set working directory
@@ -19,11 +20,17 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
-# Remove default nginx Welcome page
+# Remove default nginx page
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy custom nginx configuration
+# Copy nginx config
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 
-# Start php-fpm and nginx when container runs
-CMD service php-fpm start && nginx -g "daemon off;"
+# Copy supervisor configuration
+COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Expose port
+EXPOSE 80
+
+# Start Supervisor (runs PHP-FPM + Nginx)
+CMD ["/usr/bin/supervisord"]
