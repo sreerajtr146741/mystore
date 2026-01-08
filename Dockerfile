@@ -23,14 +23,15 @@ COPY . .
 # Remove default nginx page
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy nginx config
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
-
 # Copy supervisor configuration
 COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Expose port
+# Copy start script and make executable
+COPY ./start.sh /var/www/html/start.sh
+RUN chmod +x /var/www/html/start.sh
+
+# Expose port (Render ignores this, but good for documentation)
 EXPOSE 80
 
-# Start Supervisor (runs PHP-FPM + Nginx)
-CMD ["/usr/bin/supervisord"]
+# Start Container using script to handle PORT
+CMD ["/var/www/html/start.sh"]
