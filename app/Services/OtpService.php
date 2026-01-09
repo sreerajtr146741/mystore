@@ -35,6 +35,7 @@ class OtpService {
         [$subject, $message] = self::getEmailContent($context, $data);
 
         // Send email
+        \Illuminate\Support\Facades\Log::info("OTP for {$email}: {$otp}");
         Mail::to($email)->send(new OtpMail($otp, $userName, $subject, $message));
     }
 

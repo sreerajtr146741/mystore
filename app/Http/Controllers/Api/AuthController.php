@@ -27,7 +27,7 @@ class AuthController extends Controller
             // 'name' is removed from User model fillables in your edits, so we rely on firstname/lastname
         ]);
 
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'registration', ['role' => $user->role]);
 
         return ApiResponse::created(
             ['email' => $user->email],
@@ -79,7 +79,7 @@ class AuthController extends Controller
             ], 'Admin login successful');
         }
 
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'login');
 
         return ApiResponse::success(
             ['email' => $user->email],
@@ -149,7 +149,7 @@ class AuthController extends Controller
         // Handle profile photo upload
         if ($request->hasFile('profile_photo')) {
             $path = $request->file('profile_photo')->store('profile_photos', 'public');
-            $data['profile_photo_url'] = asset('storage/' . $path);
+            $data['profile_photo'] = $path;
         }
 
         $user->update($data);
@@ -173,7 +173,7 @@ class AuthController extends Controller
             return ApiResponse::notFound('No account found with this email');
         }
 
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'password_reset');
 
         return ApiResponse::success(
             ['email' => $user->email],
