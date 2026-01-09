@@ -12,7 +12,8 @@ class Authenticate extends Middleware
     protected function redirectTo($request)
     {
         if (! $request->expectsJson()) {
-            return route('login');
+            // Redirect to home page (logged out view) as requested
+            return route('products.index'); 
         }
     }
 }

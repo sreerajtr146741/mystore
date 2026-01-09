@@ -39,7 +39,10 @@
 <div class="position-absolute top-0 end-0 p-4 z-50">
     <div class="dropdown">
         <button class="btn btn-glass dropdown-toggle d-flex align-items-center gap-3 shadow-lg" type="button" data-bs-toggle="dropdown">
-            <img src="{{ auth()->user()->profile_photo_url }}" class="rounded-circle border border-white border-3" width="50" height="50">
+            <img src="{{ auth()->user()->profile_photo_url }}" 
+                 class="rounded-circle border border-white border-3" 
+                 width="50" height="50"
+                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=7F9CF5&background=EBF4FF';">
             <div class="text-start">
                 <div class="fw-bold text-white">{{ auth()->user()->name }}</div>
                 <small class="text-info text-capitalize">{{ auth()->user()->role }}</small>

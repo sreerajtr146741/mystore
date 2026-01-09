@@ -47,6 +47,7 @@
                             <img src="{{ auth()->user()->profile_photo_url }}" 
                                  alt="{{ auth()->user()->name }}"
                                  class="rounded-circle"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=7F9CF5&background=EBF4FF';"
                                  style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
