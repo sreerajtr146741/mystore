@@ -145,3 +145,8 @@ Route::middleware(['auth:sanctum', 'is_admin'])->prefix('admin')->group(function
 
 // Alias: /api/users -> Admin User List (Protected)
 Route::middleware(['auth:sanctum', 'is_admin'])->get('/users', [UserManagementController::class, 'index']);
+
+
+Route::get('/test', function () {
+    return response()->json(['status' => 'backend working']);
+});
