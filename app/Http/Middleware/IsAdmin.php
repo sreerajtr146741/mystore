@@ -13,24 +13,32 @@ class IsAdmin
         $user = $request->user();
 
         if (!$user) {
+            if ($request->expectsJson()) {
+                return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+            }
             return redirect()->route('login');
         }
 
          // Check Model Role
+        $is_admin = false;
+        
         if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
-            return $next($request);
+            $is_admin = true;
         }
-
-        // Allow admin@store.com email directly
-        if ($user->email === 'admin@store.com') {
-            return $next($request);
+        elseif ($user->email === 'admin@store.com') {
+            $is_admin = true;
         }
-
-        // Adjust to your schema:
-        // either boolean 'is_admin' (1) OR role column equals 'admin'
-        if ((property_exists($user, 'is_admin') && (int) $user->is_admin === 1)
+        elseif ((property_exists($user, 'is_admin') && (int) $user->is_admin === 1)
             || (property_exists($user, 'role') && $user->role === 'admin')) {
+            $is_admin = true;
+        }
+
+        if ($is_admin) {
             return $next($request);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => false, 'message' => 'Access denied. Admins only.'], 403);
         }
 
         abort(403, 'Only admins can access this area.');

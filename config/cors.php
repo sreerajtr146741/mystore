@@ -8,10 +8,10 @@ return [
 
     // Allow your frontend domain (Render)
     // Replace this URL with your real frontend URL:
-    // 'allowed_origins' => ['https://mystore-frontend-ip77.onrender.com'],
+     'allowed_origins' => ['https://mystore-frontend-ip77.onrender.com'],
 
     // For testing, allow all:
-    'allowed_origins' => ['*'],
+    //'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 

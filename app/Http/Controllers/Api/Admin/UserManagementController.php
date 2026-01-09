@@ -69,7 +69,7 @@ class UserManagementController extends Controller
             return ApiResponse::notFound('User not found');
         }
 
-        if ($user->role === 'admin') {
+        if ($user->isAdmin()) {
             return ApiResponse::error('Cannot modify admin user status', 403);
         }
 
@@ -92,7 +92,7 @@ class UserManagementController extends Controller
             return ApiResponse::notFound('User not found');
         }
 
-        if ($user->role === 'admin') {
+        if ($user->isAdmin()) {
             return ApiResponse::error('Cannot delete admin user', 403);
         }
 
