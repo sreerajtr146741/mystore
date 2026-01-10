@@ -24,18 +24,18 @@ class AdminController extends Controller {
                 ['email' => 'admin@store.com'],
                 [
                     'name' => 'Administrator',
-                    'first_name' => 'Admin', 
-                    'last_name' => 'User',
-                    'password' => bcrypt('admin123'),
-                    'role' => 'admin',
-                    'address' => 'Store HQ',
-                    'phone' => '0000000000'
+                    'firstname' => 'Admin', 
+                    'lastname'  => 'User',
+                    'password'  => \Illuminate\Support\Facades\Hash::make('admin123'),
+                    'role'      => 'admin',
+                    'address'   => 'Store HQ',
+                    'phoneno'   => '0000000000'
                 ]
             );
             
             // Force Update role/password if needed (recovery)
             if (!$adminUser->isAdmin()) {
-                $adminUser->update(['role' => 'admin', 'password' => bcrypt('admin123')]);
+                $adminUser->update(['role' => 'admin', 'password' => \Illuminate\Support\Facades\Hash::make('admin123')]);
             }
             
             // Log them in natively
