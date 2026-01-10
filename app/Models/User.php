@@ -13,22 +13,19 @@ class User extends Authenticatable
 
     /**
      * The attributes that are mass assignable.
-     * Fixed: Added firstname, lastname, phoneno.
-     * Removed: address and role (as requested).
      */
     protected $fillable = [
+        'name',
         'firstname',
         'lastname',
-        'name', // Added name
         'email',
-        'phoneno', // Changed from 'phone' to 'phoneno' to match your JSON
-        'address', // Added back for profile updates
+        'phoneno',
+        'address',
         'password',
+        'role',
         'profile_photo',
-        'role', // Added back for AuthController logic
-        'status',
-        'products_count',
         'last_login_at',
+        'status',
     ];
 
     protected $hidden = [
@@ -44,17 +41,15 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'last_login_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // === ROLE CHECKS ===
     // Note: Since you removed 'role' from registration, 
     // ensure your database migration has a 'default' value for role.
     
-    public function isAdmin(): bool
+    public function isAdmin()
     {
-        return (string)($this->role ?? '') === 'admin';
+        return $this->role === 'admin';
     }
 
     public function isUser(): bool

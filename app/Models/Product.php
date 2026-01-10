@@ -2,93 +2,56 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
-// ADD:
-use App\Models\Category; // for the category relation
+use App\Models\User; // Added back for user() relation
+use App\Models\Category; // Added back for categoryModel() relation
+use App\Models\ProductBanner; // Added back for banners() relation
+use App\Models\OrderItem; // Added back for orderItems() relation
 
 class Product extends Model
 {
-    /**
-     * Mass-assignable attributes
-     */
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'name',
         'description',
         'price',
-        'category',
-        'image',
         'stock',
-        'status',
-        'slug',
-
-        // discount fields
+        'image',
+        'category_id',
+        'category',
         'discount_type',
         'discount_value',
-        'discount_starts_at',
-        'discount_ends_at',
-        'is_discount_active',
-        'is_active',
-
-        // ADD:
-        'category_id',
+        'status',
         'specifications',
+        'slug',
+        'sku',
+        'is_active',
     ];
 
-    /**
-     * Attribute casting
-     */
     protected $casts = [
-        'price'               => 'decimal:2',
-        'discount_value'      => 'decimal:2',
-        'stock'               => 'integer',
-        'is_featured'         => 'boolean',
-        'is_discount_active'  => 'boolean',
-        'is_active'           => 'boolean',
-        'images'              => 'array',
-        'specifications'      => 'array',
-        'discount_starts_at'  => 'datetime',
-        'discount_ends_at'    => 'datetime',
+        'specifications' => 'array',
+        'is_active' => 'boolean',
+        'price' => 'decimal:2',
+        'discount_value' => 'decimal:2',
     ];
-
-    /**
-     * Accessors to append on array/json
-     */
-    protected $appends = [
-        'final_price',
-        // ADD:
-        'discounted_price', // keep legacy accessor visible in arrays/json
-    ];
-
-    /* =========================
-       Relationships
-       ========================= */
-
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // ADD:
-    public function linkedCategory()
+    public function categoryModel()
     {
-        // Uses 'category_id' FK, adjusts automatically if null
         return $this->belongsTo(Category::class, 'category_id');
     }
 
-    /**
-     *Product can have multiple banners
-     */
     public function banners()
     {
-        return $this->hasMany(ProductBanner::class)->orderBy('sort_order')->orderBy('id');
+        return $this->hasMany(ProductBanner::class);
     }
-
-
-
 
     public function orderItems()
     {

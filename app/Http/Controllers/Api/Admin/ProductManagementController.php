@@ -3,141 +3,42 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Helpers\ApiResponse;
-use App\Http\Controllers\Api\StoreProductRequest;
-use App\Http\Controllers\Api\UpdateProductRequest;
 use Illuminate\Http\Request;
+use App\Models\Product;
 
 class ProductManagementController extends Controller
 {
-    /**
-     * List all products
-     */
-    public function index(Request $request)
+    public function index()
     {
-        $query = Product::with('linkedCategory');
-
-        // Filter by category
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        $products = $query->latest()->paginate($request->get('per_page', 15));
-
-        return ApiResponse::success($products);
+        return response()->json(['status' => true, 'data' => Product::all()]);
     }
 
-    /**
-     * Get product details
-     */
-    public function show($id)
+    public function store(Request $request)
     {
-        $product = Product::with(['linkedCategory', 'banners'])->find($id);
-
-        if (!$product) {
-            return ApiResponse::notFound('Product not found');
-        }
-
-        return ApiResponse::success(['product' => $product]);
-    }
-
-    /**
-     * Create new product
-     */
-    public function store(StoreProductRequest $request)
-    {
-        $data = $request->validated();
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $data['image_url'] = asset('storage/' . $path);
-        }
-
-        $product = Product::create($data);
-
-        return ApiResponse::created(
-            ['product' => $product],
-            'Product created successfully'
-        );
-    }
-
-    /**
-     * Update product
-     */
-    public function update(UpdateProductRequest $request, $id)
-    {
-        $product = Product::find($id);
-
-        if (!$product) {
-            return ApiResponse::notFound('Product not found');
-        }
-
-        $data = $request->validated();
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $data['image_url'] = asset('storage/' . $path);
-        }
-
-        $product->update($data);
-
-        return ApiResponse::success(
-            ['product' => $product->fresh()],
-            'Product updated successfully'
-        );
-    }
-
-    /**
-     * Toggle product status
-     */
-    public function toggleStatus($id)
-    {
-        $product = Product::find($id);
-
-        if (!$product) {
-            return ApiResponse::notFound('Product not found');
-        }
-
-        $product->update([
-            'status' => $product->status === 'active' ? 'inactive' : 'active'
+        $data = $request->validate([
+            'name' => 'required',
+            'price' => 'required',
+            'stock' => 'required',
+            'category' => 'required',
+            // ... other fields
         ]);
-
-        return ApiResponse::success(
-            ['product' => $product],
-            'Product status updated successfully'
-        );
+        
+        $product = Product::create($request->all());
+        return response()->json(['status' => true, 'message' => 'Product created', 'data' => $product]);
     }
 
-    /**
-     * Delete product
-     */
+    public function update(Request $request, $id)
+    {
+        $product = Product::find($id);
+        if (!$product) return response()->json(['status' => false, 'message' => 'Not found'], 404);
+        
+        $product->update($request->all());
+        return response()->json(['status' => true, 'message' => 'Product updated']);
+    }
+
     public function destroy($id)
     {
-        $product = Product::find($id);
-
-        if (!$product) {
-            return ApiResponse::notFound('Product not found');
-        }
-
-        $product->delete();
-
-        return ApiResponse::success(null, 'Product deleted successfully');
+        Product::destroy($id);
+        return response()->json(['status' => true, 'message' => 'Product deleted']);
     }
 }

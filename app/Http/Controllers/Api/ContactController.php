@@ -3,39 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContactMessage;
-use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
+use App\Models\ContactMessage;
 
 class ContactController extends Controller
 {
-    /**
-     * Submit contact form
-     */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
+        $data = $request->validate([
+            'name' => 'required|string',
             'email' => 'required|email',
-            'subject' => 'required|string|max:255',
-            'message' => 'required|string|max:2000'
+            'subject' => 'required|string',
+            'message' => 'required|string',
         ]);
 
-        $parts = explode(' ', $request->name, 2);
-        $firstName = $parts[0];
-        $lastName = isset($parts[1]) ? $parts[1] : '';
+        ContactMessage::create($data);
 
-        $contact = ContactMessage::create([
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'email' => $request->email,
-            'subject' => $request->subject,
-            'message' => $request->message
-        ]);
-
-        return ApiResponse::created(
-            ['contact' => $contact],
-            'Your message has been sent successfully. We will get back to you soon.'
-        );
+        return response()->json(['status' => true, 'message' => 'Message sent successfully']);
     }
 }
