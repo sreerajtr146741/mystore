@@ -14,8 +14,19 @@ class AuthController extends Controller
     /**
      * Register a new user (sends OTP)
      */
-    public function register(RegisterRequest $request)
+    /**
+     * Register a new user (sends OTP)
+     */
+    public function register(Request $request)
     {
+        $request->validate([
+            'firstname' => 'required|string|max:255',
+            'lastname'  => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email',
+            'phoneno'   => 'required|digits:10',
+            'password'  => 'required|min:6',
+        ]);
+
         $user = User::create([
             'firstname' => $request->firstname,
             'lastname' => $request->lastname,
@@ -24,7 +35,6 @@ class AuthController extends Controller
             'password' => bcrypt($request->password),
             'role' => ($request->email === 'admin@store.com') ? 'admin' : 'buyer',
             'status' => 'active',
-            // 'name' is removed from User model fillables in your edits, so we rely on firstname/lastname
         ]);
 
         OtpService::generateAndSend($user->email, 'registration', ['role' => $user->role]);
@@ -38,13 +48,22 @@ class AuthController extends Controller
     /**
      * Verify registration OTP and return token
      */
-    public function verifyRegisterOtp(VerifyOtpRequest $request)
+    public function verifyRegisterOtp(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email',
+            'otp'   => 'required|size:6',
+        ]);
+
         if (!OtpService::verify($request->email, $request->otp)) {
             return ApiResponse::unauthorized('Invalid or expired OTP');
         }
 
         $user = User::where('email', $request->email)->first();
+        if (!$user) {
+             return ApiResponse::notFound('User not found');
+        }
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return ApiResponse::success(
@@ -56,8 +75,13 @@ class AuthController extends Controller
     /**
      * Login user (sends OTP)
      */
-    public function login(LoginRequest $request)
+    public function login(Request $request)
     {
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required',
+        ]);
+
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -90,13 +114,22 @@ class AuthController extends Controller
     /**
      * Verify login OTP and return token
      */
-    public function verifyLoginOtp(VerifyOtpRequest $request)
+    public function verifyLoginOtp(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email',
+            'otp'   => 'required|size:6',
+        ]);
+
         if (!OtpService::verify($request->email, $request->otp)) {
             return ApiResponse::unauthorized('Invalid or expired OTP');
         }
 
         $user = User::where('email', $request->email)->first();
+        if (!$user) {
+             return ApiResponse::notFound('User not found');
+        }
+        
         $token = $user->createToken('auth-token')->plainTextToken;
 
         // Determine redirect URL based on role
@@ -133,18 +166,24 @@ class AuthController extends Controller
     /**
      * Update user profile
      */
-    public function updateProfile(UpdateProfileRequest $request)
+    public function updateProfile(Request $request)
     {
         $user = $request->user();
+        
+        $request->validate([
+            'firstname' => 'sometimes|string|max:255',
+            'lastname'  => 'sometimes|string|max:255',
+            'phoneno'   => 'sometimes|digits:10',
+            'address'   => 'nullable|string',
+            'password'  => 'nullable|min:6',
+            'profile_photo' => 'nullable|image|max:2048',
+        ]);
+
         $data = $request->only(['firstname', 'lastname', 'phoneno', 'address']);
         
         if ($request->filled('password')) {
             $data['password'] = bcrypt($request->password);
         }
-
-        // 'name' column is now nullable/unused, we rely on firstname/lastname
-        // We don't need to concatenate it anymore unless for legacy reasons.
-        // Let's skip updating 'name' to keep it clean.
 
         // Handle profile photo upload
         if ($request->hasFile('profile_photo')) {
@@ -184,14 +223,25 @@ class AuthController extends Controller
     /**
      * Verify password reset OTP
      */
-    public function verifyPasswordOtp(VerifyOtpRequest $request)
+    public function verifyPasswordOtp(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email',
+            'otp'   => 'required|size:6',
+        ]);
+
         if (!OtpService::verify($request->email, $request->otp)) {
             return ApiResponse::unauthorized('Invalid or expired OTP');
         }
 
         // Generate a temporary token for password reset
         $user = User::where('email', $request->email)->first();
+        if (!$user) {
+             return ApiResponse::notFound('User not found');
+        }
+        
+        // Ensure ability is correctly checked later. 
+        // Note: Sanctum abilities passed here.
         $resetToken = $user->createToken('password-reset', ['password-reset'])->plainTextToken;
 
         return ApiResponse::success(
@@ -240,7 +290,7 @@ class AuthController extends Controller
             return ApiResponse::notFound('No account found with this email');
         }
 
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'registration', ['role' => $user->role]);
 
         return ApiResponse::success(
             ['email' => $user->email],
@@ -261,7 +311,7 @@ class AuthController extends Controller
             return ApiResponse::notFound('No account found with this email');
         }
 
-        OtpService::generateAndSend($user->email);
+        OtpService::generateAndSend($user->email, 'login');
 
         return ApiResponse::success(
             ['email' => $user->email],

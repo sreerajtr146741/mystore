@@ -36,7 +36,14 @@ class OtpService {
 
         // Send email
         \Illuminate\Support\Facades\Log::info("OTP for {$email}: {$otp}");
-        Mail::to($email)->send(new OtpMail($otp, $userName, $subject, $message));
+        
+        try {
+            Mail::to($email)->send(new OtpMail($otp, $userName, $subject, $message));
+            \Illuminate\Support\Facades\Log::info("Mail sent successfully to {$email}");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Mail sending failed to {$email}: " . $e->getMessage());
+            throw $e; // Re-throw to let controller handle it
+        }
     }
 
     /**
