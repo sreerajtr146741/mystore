@@ -1,51 +1,75 @@
+# -------------------------------
+# 1. Base PHP Image with FPM
+# -------------------------------
 FROM php:8.2-fpm
 
-# Install Nginx + system dependencies
+# -------------------------------
+# 2. Install System Libraries
+# -------------------------------
 RUN apt-get update && apt-get install -y \
     nginx \
+    git \
     libpq-dev \
+    libzip-dev \
     libonig-dev \
     libxml2-dev \
-    libzip-dev \
     unzip \
     zip \
-    supervisor
+    supervisor \
+    curl \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip
 
-# Install PDO extensions
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
-
-# Get Composer
+# -------------------------------
+# 3. Install Composer
+# -------------------------------
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# -------------------------------
+# 4. Set Working Directory
+# -------------------------------
 WORKDIR /var/www/html
 
-# Copy project files
+# -------------------------------
+# 5. Copy Laravel Application
+# -------------------------------
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# -------------------------------
+# 6. Install PHP Dependencies
+# -------------------------------
+RUN composer install --no-dev --optimize-autoloader --no-progress --no-interaction
 
-# Set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# -------------------------------
+# 6b. Configure PHP-FPM for Socket
+# -------------------------------
+RUN mkdir -p /run/php \
+    && chown -R www-data:www-data /run/php \
+    && sed -i 's/listen = 127.0.0.1:9000/listen = \/run\/php\/php-fpm.sock/g' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/listen = 9000/listen = \/run\/php\/php-fpm.sock/g' /usr/local/etc/php-fpm.d/zz-docker.conf || true \
+    && echo "listen.owner = www-data" >> /usr/local/etc/php-fpm.d/www.conf \
+    && echo "listen.group = www-data" >> /usr/local/etc/php-fpm.d/www.conf
 
-# Remove default nginx page and configs
-RUN rm -rf /usr/share/nginx/html/* \
-    && rm -rf /etc/nginx/sites-enabled/* \
-    && rm -rf /etc/nginx/sites-available/*
+# -------------------------------
+# 7. Set Proper Permissions
+# -------------------------------
+RUN chmod -R 775 storage bootstrap/cache
 
-# Copy nginx config
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+# -------------------------------
+# 8. Copy Nginx Configuration
+# -------------------------------
+COPY ./nginx.conf /etc/nginx/sites-available/default
 
-# Copy supervisor configuration
-COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# -------------------------------
+# 9. Copy Supervisor Config
+# -------------------------------
+COPY ./supervisor.conf /etc/supervisor/conf.d/supervisor.conf
 
-# Copy start script and make executable
-COPY ./start.sh /var/www/html/start.sh
-RUN chmod +x /var/www/html/start.sh
-
-# Expose port (Render ignores this, but good for documentation)
+# -------------------------------
+# 10. Expose Container Port
+# -------------------------------
 EXPOSE 80
 
-# Start Container using script to handle PORT
-CMD ["/var/www/html/start.sh"]
+# -------------------------------
+# 11. Start Supervisor (runs nginx + php-fpm)
+# -------------------------------
+CMD ["/usr/bin/supervisord", "-n"]

@@ -9,4 +9,4 @@ sed -i "s/listen 80;/listen $PORT;/g" /etc/nginx/conf.d/default.conf
 echo "Starting Nginx on port $PORT..."
 
 # Start Supervisord
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisor.conf
