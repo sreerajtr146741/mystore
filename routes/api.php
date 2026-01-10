@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardControll
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ProductManagementController;
 use App\Http\Controllers\Api\Admin\OrderManagementController;
+use App\Http\Controllers\Api\Admin\CategoryDiscountController;
 
 /*
 |--------------------------------------------------------------------------
@@ -141,6 +142,9 @@ Route::middleware(['auth:sanctum', 'is_admin'])->prefix('admin')->group(function
     Route::get('/orders', [OrderManagementController::class, 'index']);
     Route::get('/orders/{id}', [OrderManagementController::class, 'show']);
     Route::patch('/orders/{id}/status', [OrderManagementController::class, 'updateStatus']);
+
+    // Category Discounts
+    Route::post('/category-discount', [CategoryDiscountController::class, 'store']);
 });
 
 // Alias: /api/users -> Admin User List (Protected)

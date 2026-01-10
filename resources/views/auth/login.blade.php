@@ -75,6 +75,13 @@
                 </div>
                 @endif
 
+                <!-- General Error (e.g., from Dashboard crash) -->
+                @if(session('error'))
+                <div class="flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+                    {{ session('error') }}
+                </div>
+                @endif
+
                 <!-- Errors -->
                 @if($errors->any())
                 <div class="flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">

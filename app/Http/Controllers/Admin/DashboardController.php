@@ -10,7 +10,8 @@ use App\Models\Order;
 use App\Models\SellerApplication;
 use App\Models\ContactMessage;
 use Exception;
-use Log;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class DashboardController extends Controller
 {
@@ -104,7 +105,7 @@ class DashboardController extends Controller
                 'alerts', 'userStats', 'revenue', 'adminExtras'
             ));
 
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Log::error('Admin Dashboard load failed: ' . $e->getMessage());
             return back()->with('error', 'Unable to load Dashboard. Please try again.');
         }
