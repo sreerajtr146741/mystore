@@ -36,119 +36,98 @@ class ProductSeeder extends Seeder
             'Headphones' => Category::firstOrCreate(['name' => 'Headphones']),
         ];
 
-        // Sample products with Placeholder Images
+        // 6 Real Products with Unsplash Images
         $products = [
             [
-                'name' => 'iPhone 15 Pro',
-                'description' => 'Latest Apple iPhone with A17 Pro chip, titanium design, and advanced camera system.',
-                'price' => 999.99,
+                'name' => 'MacBook Pro 16 M3',
+                'description' => 'The ultimate pro laptop. Blazing fast M3 chip, stunning Liquid Retina XDR display, and all-day battery life.',
+                'price' => 2499.00,
+                'category' => 'Laptops',
+                'stock' => 15,
+                'is_active' => true,
+                'image' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=800',
+            ],
+            [
+                'name' => 'Sony Alpha A7 IV',
+                'description' => 'Professional full-frame mirrorless camera. 33MP Exmor R sensor, 4K 60p video, and real-time Eye AF.',
+                'price' => 2498.00,
+                'category' => 'Mobile Phones', // Putting in valid category even if mismatch name, or create new? Let's use 'Mobile Phones' or existing. Actually I created 'Mobile Phones', 'Laptops' etc above. I should stick to those. 
+                // Wait, 'Cameras' is not in my category list above.
+                // I should add 'Cameras' category.
+            ],
+            [
+                'name' => 'iPhone 15 Pro Max',
+                'description' => 'Titanium design, A17 Pro chip, and our most advanced camera system yet. The best iPhone ever.',
+                'price' => 1199.00,
                 'category' => 'Mobile Phones',
                 'stock' => 50,
                 'is_active' => true,
-                'image' => 'https://placehold.co/600x400/1a1a1a/gold?text=iPhone+15+Pro',
-            ],
-            [
-                'name' => 'Samsung Galaxy S24 Ultra',
-                'description' => 'Premium Android phone with S Pen, 200MP camera, and AI features.',
-                'price' => 1199.99,
-                'category' => 'Mobile Phones',
-                'stock' => 45,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/222222/FFF?text=Galaxy+S24+Ultra',
-            ],
-            [
-                'name' => 'MacBook Pro 16"',
-                'description' => 'Powerful laptop with M3 Pro chip, stunning Liquid Retina XDR display.',
-                'price' => 2499.99,
-                'category' => 'Laptops',
-                'stock' => 30,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/c7c7c7/000?text=MacBook+Pro+16',
-            ],
-            [
-                'name' => 'Dell XPS 15',
-                'description' => 'Premium Windows laptop with Intel Core i7, NVIDIA graphics, and InfinityEdge display.',
-                'price' => 1899.99,
-                'category' => 'Laptops',
-                'stock' => 25,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/333/FFF?text=Dell+XPS+15',
-            ],
-            [
-                'name' => 'iPad Pro 12.9"',
-                'description' => 'Professional tablet with M2 chip, ProMotion display, and Apple Pencil support.',
-                'price' => 1099.99,
-                'category' => 'Tablets',
-                'stock' => 40,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/DDD/000?text=iPad+Pro',
-            ],
-            [
-                'name' => 'Samsung Galaxy Tab S9',
-                'description' => 'Premium Android tablet with S Pen, AMOLED display, and DeX mode.',
-                'price' => 799.99,
-                'category' => 'Tablets',
-                'stock' => 35,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/111/FFF?text=Galaxy+Tab+S9',
-            ],
-            [
-                'name' => 'Apple Watch Series 9',
-                'description' => 'Advanced smartwatch with health tracking, always-on display, and ECG.',
-                'price' => 399.99,
-                'category' => 'Smart Watches',
-                'stock' => 60,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/red/white?text=Apple+Watch+S9',
-            ],
-            [
-                'name' => 'Samsung Galaxy Watch 6',
-                'description' => 'Feature-rich smartwatch with Wear OS, health monitoring, and long battery life.',
-                'price' => 299.99,
-                'category' => 'Smart Watches',
-                'stock' => 55,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/333/white?text=Galaxy+Watch+6',
+                'image' => 'https://images.unsplash.com/photo-1696446701796-da61225697cc?auto=format&fit=crop&q=80&w=800',
             ],
             [
                 'name' => 'Sony WH-1000XM5',
-                'description' => 'Industry-leading noise canceling headphones with exceptional sound quality.',
-                'price' => 399.99,
-                'category' => 'Headphones',
-                'stock' => 70,
-                'is_active' => true,
-                'image' => 'https://placehold.co/600x400/000/FFF?text=Sony+XM5',
-            ],
-            [
-                'name' => 'AirPods Pro (2nd Gen)',
-                'description' => 'Premium wireless earbuds with active noise cancellation and spatial audio.',
-                'price' => 249.99,
+                'description' => 'Industry-leading noise cancellation, crystal clear hands-free calling, and 30-hour battery life.',
+                'price' => 348.00,
                 'category' => 'Headphones',
                 'stock' => 100,
                 'is_active' => true,
-                'image' => 'https://placehold.co/600x400/FFF/000?text=AirPods+Pro',
+                'image' => 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=800',
             ],
+            [
+                'name' => 'Apple Watch Ultra 2',
+                'description' => 'Rugged and capable. Brightest display ever. Precision GPS. 36 hours of battery life.',
+                'price' => 799.00,
+                'category' => 'Smart Watches',
+                'stock' => 30,
+                'is_active' => true,
+                'image' => 'https://images.unsplash.com/photo-1695669352796-06e902df5953?auto=format&fit=crop&q=80&w=800',
+            ],
+            [
+                'name' => 'iPad Air 5',
+                'description' => 'Supercharged by the Apple M1 chip. 10.9-inch Liquid Retina display. 12MP Ultra Wide front camera.',
+                'price' => 599.00,
+                'category' => 'Tablets',
+                'stock' => 45,
+                'is_active' => true,
+                'image' => 'https://images.unsplash.com/photo-1611532736597-6c7e23465bf9?auto=format&fit=crop&q=80&w=800',
+            ],
+            // Replacing Camera with existing category item -> Maybe another Laptop?
+            // Actually I can add 'Cameras' category on the fly.
+        ];
+
+        // Add 'Cameras' to seeded categories if loop needs it, OR just map Camera to 'Mobile Phones' for now? No that's bad.
+        // I will change the Camera product to another Laptop or Phone to stay safe with existing categories map.
+        // Let's change item 2 (Camera) to a Gaming Laptop.
+        $products[1] = [
+             'name' => 'ASUS ROG Zephyrus G14',
+             'description' => 'Ultra-powerful gaming laptop with Ryzen 9, RTX 4060, and 14" ROG Nebula Display.',
+             'price' => 1599.00,
+             'category' => 'Laptops',
+             'stock' => 10,
+             'is_active' => true,
+             'image' => 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&q=80&w=800',
         ];
 
         foreach ($products as $productData) {
             $categoryName = $productData['category'];
             unset($productData['category']);
             
-            $category = $categories[$categoryName];
+            // Ensure category exists even if not in top list (safety)
+            $category = Category::firstOrCreate(['name' => $categoryName]);
             
             Product::create([
                 'user_id' => $admin->id,
                 'category_id' => $category->id,
-                'category' => $categoryName, // Fix: Populate required string column
+                'category' => $categoryName, 
                 'name' => $productData['name'],
                 'description' => $productData['description'],
                 'price' => $productData['price'],
                 'stock' => $productData['stock'],
                 'is_active' => $productData['is_active'],
-                'image' => $productData['image'], // Added image
+                'image' => $productData['image'],
             ]);
         }
 
-        $this->command->info('Sample products created successfully!');
+        $this->command->info('6 Real Products seeded successfully!');
     }
 }
