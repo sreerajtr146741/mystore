@@ -27,17 +27,4 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->create();
 
-/*
-|--------------------------------------------------------------------------
-| Vercel Storage Path Fix
-|--------------------------------------------------------------------------
-|
-| Laravel requires a writable storage path, but Vercel's file system is
-| read-only. We point the storage path to the ephemeral /tmp directory.
-|
-*/
-if (isset($_ENV['VERCEL'])) {
-    $app->useStoragePath('/tmp/storage');
-}
-
 return $app;
