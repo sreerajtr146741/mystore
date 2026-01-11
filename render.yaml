@@ -1,11 +1,43 @@
 services:
   - type: web
-    name: mystore-backend
-    env: docker
-    dockerfilePath: Dockerfile
-    plan: starter
+    name: mystore
+    env: php
+    plan: free 
+    buildCommand: composer install --optimize-autoloader --no-dev
+    startCommand: php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host 0.0.0.0 --port 10000
     envVars:
-      - key: APP_ENV
-        value: production
+      - key: APP_KEY
+        generateValue: true
       - key: APP_DEBUG
         value: false
+      - key: APP_ENV
+        value: production
+      - key: APP_URL
+        value: https://mystore.onrender.com
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: mystore-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: mystore-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: mystore-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: mystore-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: mystore-db
+          property: password
+
+databases:
+  - name: mystore-db
+    databaseName: mystore
+    user: mystore
